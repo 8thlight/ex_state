@@ -1,10 +1,9 @@
-defmodule ExState.Ecto.Migrations do
+defmodule ExState.Ecto.Migration do
   use Ecto.Migration
 
   def up do
     create table(:workflows) do
       add(:name, :string, null: false)
-      add(:subject, :string)
       add(:state, :string, null: false)
       add(:is_complete, :boolean, null: false, default: false)
       add(:lock_version, :integer, default: 1)
@@ -21,7 +20,6 @@ defmodule ExState.Ecto.Migrations do
 
     create table(:workflows_workflow_participants, primary_key: false) do
       add(:workflow_id, references(:workflows, on_delete: :delete_all), null: false)
-
       add(:participant_id, references(:workflow_participants, on_delete: :delete_all), null: false)
     end
 
@@ -36,12 +34,10 @@ defmodule ExState.Ecto.Migrations do
       add(:completed_at, :utc_datetime_usec)
       add(:workflow_id, references(:workflows, on_delete: :delete_all), null: false)
       add(:completed_by_id, references(:users, on_delete: :nilify_all))
-      add(:document_version_id, references(:document_versions, on_delete: :nilify_all))
       add(:participant_id, references(:workflow_participants, on_delete: :nilify_all))
       timestamps()
     end
 
-    create(index(:workflow_steps, [:workflow_id]))
     create(unique_index(:workflow_steps, [:workflow_id, :state, :name]))
     create(index(:workflow_steps, [:participant_id]))
   end

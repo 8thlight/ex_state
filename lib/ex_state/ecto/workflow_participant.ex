@@ -3,12 +3,10 @@ defmodule ExState.Ecto.WorkflowParticipant do
 
   alias ExState.Ecto.WorkflowStep
 
-  # TODO
-  alias MyApp.Entities.Entity
-
   schema "workflow_participants" do
     field :name, :string
-    belongs_to :entity, Entity
+    # TODO
+    field :entity_id, :string
     has_many :steps, WorkflowStep, foreign_key: :participant_id
     timestamps()
   end

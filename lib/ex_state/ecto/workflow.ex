@@ -6,7 +6,6 @@ defmodule ExState.Ecto.Workflow do
 
   schema "workflows" do
     field :name, :string
-    field :subject, :string
     field :state, :string
     field :complete?, :boolean, default: false, source: :is_complete
     field :definition, :any, virtual: true
@@ -27,7 +26,6 @@ defmodule ExState.Ecto.Workflow do
   ]
 
   @optional_attrs [
-    :subject,
     :complete?
   ]
 
@@ -44,12 +42,5 @@ defmodule ExState.Ecto.Workflow do
 
   def completed_steps(workflow) do
     Enum.filter(workflow.steps, fn step -> step.complete? end)
-  end
-
-  def phase(workflow) do
-    case String.split(workflow.name, ".") do
-      [_name] -> nil
-      [phase | _rest] -> phase
-    end
   end
 end

@@ -4,9 +4,6 @@ defmodule ExState.Ecto.WorkflowStep do
   alias ExState.Ecto.Workflow
   alias ExState.Ecto.WorkflowParticipant
 
-  # TODO
-  alias MyApp.Users.User
-
   schema "workflow_steps" do
     field :state, :string
     field :name, :string
@@ -14,13 +11,15 @@ defmodule ExState.Ecto.WorkflowStep do
     field :decision, :string
     field :complete?, :boolean, default: false, source: :is_complete
     field :completed_at, :utc_datetime_usec
+    # TODO
+    field :completed_by_id, :string
+
     belongs_to :workflow, Workflow
 
     belongs_to :participant, WorkflowParticipant,
       foreign_key: :participant_id,
       on_replace: :update
 
-    belongs_to :completed_by, User
     timestamps()
   end
 
