@@ -80,6 +80,30 @@ defmodule ExState.Definition do
 
     def use_step(_, _), do: true
 
+  ## Virtual States
+
+  States definitions can be reused through virtual states:
+
+  virtual :completion_states do
+    state :working do
+      step :read
+      step :sign
+      step :confirm
+    end
+  end
+
+  state :completing_a do
+    using :completion_states
+    on_completed :confirm, :completing_b
+  end
+
+  state :completing_b do
+    using :completion_states
+    on_completed :confirm, :done
+  end
+
+  state :done
+
   ## Decisions
 
   Decisions are steps that have defined options. The selection of an
@@ -215,7 +239,7 @@ defmodule ExState.Definition do
   end
 
   defmacro workflow(name, body) do
-    chart = ExState.Definition.Compiler.compile_workflow(name, body, __CALLER__)
+    chart = ExState.Definition.Compiler.compile(name, body, __CALLER__)
 
     quote do
       Module.put_attribute(__MODULE__, :chart, unquote(chart))

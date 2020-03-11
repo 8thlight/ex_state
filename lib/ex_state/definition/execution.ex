@@ -101,7 +101,7 @@ defmodule ExState.Definition.Execution do
   end
 
   defp enter_initial_state(%__MODULE__{state: %State{initial_state: initial_state}} = execution) do
-    enter_state(execution, get_state(execution, initial_state))
+    enter_state(execution, get_state(execution, initial_state), transition_actions: false)
   end
 
   defp handle_no_steps(%__MODULE__{state: %State{steps: []}} = execution) do
@@ -370,16 +370,28 @@ defmodule ExState.Definition.Execution do
   end
 
   defp put_actions(execution, opts) do
-    if Keyword.get(opts, :entry_actions, true) do
-      execution
-      |> put_exit_actions()
-      |> put_transition_actions()
-      |> put_entry_actions()
-    else
-      execution
-      |> put_exit_actions()
-      |> put_transition_actions()
-    end
+    execution =
+      if Keyword.get(opts, :exit_actions, true) do
+        put_exit_actions(execution)
+      else
+        execution
+      end
+
+    execution =
+      if Keyword.get(opts, :transition_actions, true) do
+        put_transition_actions(execution)
+      else
+        execution
+      end
+
+    execution =
+      if Keyword.get(opts, :entry_actions, true) do
+        put_entry_actions(execution)
+      else
+        execution
+      end
+
+    execution
   end
 
   @doc """

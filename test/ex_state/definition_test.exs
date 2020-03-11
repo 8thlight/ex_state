@@ -713,4 +713,60 @@ defmodule ExState.DefinitionTest do
     message = %Message{review?: false}
     assert %{state: %{name: "complete"}} = OptionalWorkflow.new(message)
   end
+
+  defmodule VirtualWorkflow do
+    use ExState.Definition
+
+    workflow "virtual_states" do
+      initial_state :completing_a
+
+      virtual :working_states do
+        initial_state :working
+
+        state :working do
+          step :read
+          step :sign
+          step :confirm
+        end
+      end
+
+      state :completing_a do
+        using :working_states
+        on_completed :confirm, :completing_b
+      end
+
+      state :completing_b do
+        using :working_states
+        on_completed :confirm, :done
+      end
+
+      state :done
+    end
+  end
+
+  test "uses virtual states" do
+    assert {:ok, %{state: %{name: "completing_a.working"}} = execution} =
+      VirtualWorkflow.new()
+      |> VirtualWorkflow.complete(:read)
+
+    assert {:ok, %{state: %{name: "completing_a.working"}} = execution} =
+      execution
+      |> VirtualWorkflow.complete(:sign)
+
+    assert {:ok, %{state: %{name: "completing_b.working"}} = execution} =
+      execution
+      |> VirtualWorkflow.complete(:confirm)
+
+    assert {:ok, %{state: %{name: "completing_b.working"}} = execution} =
+      execution
+      |> VirtualWorkflow.complete(:read)
+
+    assert {:ok, %{state: %{name: "completing_b.working"}} = execution} =
+      execution
+      |> VirtualWorkflow.complete(:sign)
+
+    assert {:ok, %{state: %{name: "done"}} = execution} =
+      execution
+      |> VirtualWorkflow.complete(:confirm)
+  end
 end
