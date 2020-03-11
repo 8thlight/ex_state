@@ -22,6 +22,9 @@ defmodule ExState.Definition.Execution do
             callback_mod: nil,
             subject: nil
 
+  @doc """
+  Creates a new workflow execution from the initial state.
+  """
   def new(workflow, subject) do
     new(workflow.definition, workflow, subject)
   end
@@ -31,6 +34,9 @@ defmodule ExState.Definition.Execution do
     |> enter_state(chart.initial_state)
   end
 
+  @doc """
+  Continues a workflow execution from the specifies state.
+  """
   def continue(workflow, subject, state_name) do
     continue(workflow.definition, workflow, subject, state_name)
   end
@@ -40,6 +46,10 @@ defmodule ExState.Definition.Execution do
     |> enter_state(state_name, entry_actions: false)
   end
 
+  @doc """
+  Continues a workflow execution with the completed steps.
+  Use in conjunction with `continue` to resume execution.
+  """
   def with_completed(execution, state_name, step_name, decision \\ nil)
 
   def with_completed(
@@ -132,6 +142,9 @@ defmodule ExState.Definition.Execution do
     %__MODULE__{execution | transitions: [transition | execution.transitions]}
   end
 
+  @doc """
+  Completes a step and transitions the execution with `{:completed, step_id}` event.
+  """
   @spec complete(t(), atom()) :: {:ok, t()} | {:error, String.t(), t()}
   def complete(execution, step_id) do
     case State.complete_step(execution.state, step_id) do
@@ -152,6 +165,9 @@ defmodule ExState.Definition.Execution do
     end
   end
 
+  @doc """
+  Completes a decision and transitions the execution with `{:decision, step_id, decision}` event.
+  """
   @spec decision(t(), atom(), atom()) :: {:ok, t()} | {:error, String.t(), t()}
   def decision(execution, step_id, decision) do
     case State.complete_step(execution.state, step_id, decision) do
@@ -176,6 +192,9 @@ defmodule ExState.Definition.Execution do
     "next steps are: #{Enum.map(next_steps, fn step -> step.name end) |> Enum.join(", ")}"
   end
 
+  @doc """
+  Transitions execution with the event and returns a result tuple.
+  """
   @spec transition_result(t(), Event.name()) :: {:ok, t()} | {:error, String.t(), t()}
   def transition_result(execution, event) do
     case do_transition(execution, event) do
@@ -187,6 +206,9 @@ defmodule ExState.Definition.Execution do
     end
   end
 
+  @doc """
+  Transitions execution with the event and returns updated or unchanged execution.
+  """
   def transition(execution, event) do
     case do_transition(execution, event) do
       {:ok, execution} ->
@@ -264,6 +286,9 @@ defmodule ExState.Definition.Execution do
 
   def complete?(execution), do: State.final?(execution.state)
 
+  @doc """
+  Returns serializable data representing the execution.
+  """
   def dump(execution) do
     participants = participants(execution)
 
@@ -357,6 +382,9 @@ defmodule ExState.Definition.Execution do
     end
   end
 
+  @doc """
+  Executes any queued actions on the execution.
+  """
   def execute_actions(execution) do
     execution.actions
     |> Enum.reverse()
@@ -380,6 +408,9 @@ defmodule ExState.Definition.Execution do
     end
   end
 
+  @doc """
+  Executes the provided action name through the callback module.
+  """
   def execute_action(execution, action) do
     if function_exported?(execution.callback_mod, action, 1) do
       apply(execution.callback_mod, action, [execution.subject])
