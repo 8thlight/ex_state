@@ -20,7 +20,7 @@ defmodule ExState.Ecto.Subject do
     quote bind_quoted: [field_name: field_name, definition: definition, opts: opts] do
       Module.put_attribute(__MODULE__, :workflow_definition, definition)
       Module.put_attribute(__MODULE__, :workflow_assoc_name, field_name)
-      belongs_to field_name, ExState.Workflow, opts
+      belongs_to field_name, ExState.Ecto.Workflow, opts
     end
   end
 
@@ -30,7 +30,7 @@ defmodule ExState.Ecto.Subject do
     quote do
       Module.put_attribute(__MODULE__, :workflow_definition, unquote(definition))
       Module.put_attribute(__MODULE__, :workflow_assoc_name, :workflow)
-      belongs_to :workflow, ExState.Workflow
+      belongs_to :workflow, ExState.Ecto.Workflow
     end
   end
 

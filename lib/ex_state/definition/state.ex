@@ -166,7 +166,7 @@ defmodule ExState.Definition.State do
   def name(id) when is_bitstring(id), do: id
 
   # The atom may not exist due to being converted to string at compile time.
-  # Should be safe to use to_atom here since the workflows API shouldn't be
+  # Should be safe to use to_atom here since this API shouldn't be
   # exposed to external input.
   def id(state), do: state.name |> last() |> String.to_atom()
 

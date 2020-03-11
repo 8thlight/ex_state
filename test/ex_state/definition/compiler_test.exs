@@ -271,4 +271,3 @@ defmodule ExState.Definition.CompilerTest do
              }
   end
 end
-

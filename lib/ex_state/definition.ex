@@ -225,7 +225,6 @@ defmodule ExState.Definition do
       def subject, do: @chart.subject
       def initial_state, do: @chart.initial_state
       def describe, do: Chart.describe(@chart)
-      def to_ts, do: ExState.Definition.Typescript.export(@chart)
       def states, do: Chart.states(@chart)
       def steps, do: Chart.steps(@chart)
       def events, do: Chart.events(@chart)

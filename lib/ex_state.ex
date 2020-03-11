@@ -11,15 +11,18 @@ defmodule ExState do
   alias ExState.Result
   alias ExState.Definition.Execution
 
-  # TODO
-  alias MyApp.Repo
+  def repo do
+    :ex_state
+    |> Application.fetch_env!(__MODULE__)
+    |> Keyword.fetch!(:repo)
+  end
 
   @spec get(struct()) :: Workflow.t() | nil
   def get(subject) do
     subject
     |> Ecto.assoc(Subject.workflow_assoc_name(subject))
     |> preload(participants: [], steps: :participant)
-    |> Repo.one()
+    |> repo().one()
     |> put_definition(subject)
   end
 
@@ -35,7 +38,7 @@ defmodule ExState do
     |> where([s], s.id == ^subject_id)
     |> join(:inner, [s], w in assoc(s, ^subject_type.workflow_assoc_name()))
     |> select([s, w], w.state)
-    |> Repo.one()
+    |> repo().one()
     |> to_state_list()
   end
 
@@ -44,7 +47,7 @@ defmodule ExState do
     subject
     |> Ecto.assoc(Subject.workflow_assoc_name(subject))
     |> select([w], w.state)
-    |> Repo.one()
+    |> repo().one()
     |> to_state_list()
   end
 
@@ -55,7 +58,7 @@ defmodule ExState do
     subject
     |> Ecto.assoc(Subject.workflow_assoc_name(subject))
     |> where([w], w.state == ^to_state_id(state))
-    |> Repo.exists?()
+    |> repo().exists?()
   end
 
   @spec state?(struct(), state(), keyword()) :: boolean()
@@ -72,7 +75,7 @@ defmodule ExState do
           s.complete?
     )
     |> where([w], w.state == ^to_state_id(state))
-    |> Repo.exists?()
+    |> repo().exists?()
   end
 
   def state?(subject, state, incomplete: incompleted_steps) do
@@ -88,7 +91,7 @@ defmodule ExState do
           not s.complete?
     )
     |> where([w], w.state == ^to_state_id(state))
-    |> Repo.exists?()
+    |> repo().exists?()
   end
 
   @spec get_step(struct(), atom() | String.t()) :: WorkflowStep.t() | nil
@@ -96,13 +99,13 @@ defmodule ExState do
     subject
     |> Ecto.assoc([Subject.workflow_assoc_name(subject), :steps])
     |> where([s], s.name == ^to_step_name(step))
-    |> Repo.one()
+    |> repo().one()
   end
 
   @spec create(struct()) :: {:ok, %{workflow: Workflow.t()}} | {:error, any(), any(), any()}
   def create(subject) do
     create_multi(subject)
-    |> Repo.transaction()
+    |> repo().transaction()
   end
 
   @spec create_multi(struct()) :: Multi.t()
@@ -117,7 +120,7 @@ defmodule ExState do
   defp assoc_workflow(%queryable{} = subject, workflow) do
     subject
     |> queryable.changeset(%{workflow_id: workflow.id})
-    |> Repo.update()
+    |> repo().update()
   end
 
   @type execution_result :: {:ok, Workflow.t()} | {:error, any()}
@@ -177,7 +180,7 @@ defmodule ExState do
       update_workflow(workflow, execution, opts)
     end)
     |> Multi.append(execute_actions(execution))
-    |> Repo.transaction()
+    |> repo().transaction()
     |> Result.Multi.extract(:workflow)
   end
 
@@ -195,7 +198,7 @@ defmodule ExState do
   defp update_workflow(workflow, execution, opts) do
     workflow
     |> update_changeset(execution, opts)
-    |> Repo.update()
+    |> repo().update()
   end
 
   defp create_changeset(subject) do
@@ -271,7 +274,7 @@ defmodule ExState do
       entity_id: params.id
     }
     |> WorkflowParticipant.new()
-    |> Repo.insert(
+    |> repo().insert(
       on_conflict: {:replace_all_except, [:id]},
       conflict_target: [:name, :entity_id]
     )
