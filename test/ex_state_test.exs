@@ -117,5 +117,13 @@ defmodule ExStateTest do
                %{state: "sent", name: "acknowledge_receipt", complete?: false},
              ] = order_steps(sale.workflow.steps)
     end
+
+    test "adds user metadata", %{sale: sale} do
+      {:ok, sale} = ExState.complete(sale, :attach_document, user_id: "user-1")
+
+      assert sale.workflow.steps
+             |> Enum.find(fn s -> s.name == "attach_document" end)
+             |> Map.get(:completed_by_id) == "user-1"
+    end
   end
 end

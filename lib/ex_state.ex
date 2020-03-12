@@ -101,7 +101,9 @@ defmodule ExState do
   def persist(execution) do
     Multi.new()
     |> Multi.run(:workflow, fn _repo, _ ->
-      update_workflow(execution.meta.workflow, execution, Map.get(execution.meta, :opts, []))
+      workflow = Map.fetch!(execution.meta, :workflow)
+      opts = Map.get(execution.meta, :opts, [])
+      update_workflow(workflow, execution, opts)
     end)
     |> Multi.append(execute_actions(execution))
     |> repo().transaction()

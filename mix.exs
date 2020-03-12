@@ -8,7 +8,12 @@ defmodule ExState.MixProject do
       elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      dialyzer: [
+        plt_add_deps: :app_tree,
+        plt_add_apps: [:mix],
+        flags: [:error_handling, :race_conditions, :underspecs]
+      ]
     ]
   end
 
@@ -25,7 +30,8 @@ defmodule ExState.MixProject do
     [
       {:ecto_sql, "~> 3.0"},
       {:postgrex, ">= 0.0.0"},
-      {:gettext, "~> 0.11"}
+      {:gettext, "~> 0.11"},
+      {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false},
     ]
   end
 end
