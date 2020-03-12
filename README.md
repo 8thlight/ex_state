@@ -19,7 +19,9 @@ Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_do
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at [https://hexdocs.pm/ex_state](https://hexdocs.pm/ex_state).
 
-## Usage with Ecto
+## Usage
+
+### Ecto Setup
 
 ```elixir
 defmodule MyApp.Repo.Migrations.AddWorkflows do
@@ -35,7 +37,12 @@ defmodule MyApp.Repo.Migrations.AddWorkflows do
 end
 ```
 
-## Usage
+```elixir
+config :ex_state, ExState,
+  repo: MyApp.Repo
+```
+
+### Defining States
 
 ```elixir
 defmodule SaleWorkflow do
@@ -104,6 +111,8 @@ defmodule Sale do
 end
 ```
 
+### Changing States
+
 ```elixir
 sale
 |> ExState.create()
@@ -126,10 +135,20 @@ def create_sale(params) do
   |> Repo.transaction()
 end
 
-def cancel_sale(id) do
+def cancel_sale(id, user_id: user_id) do
   sale = Repo.get(Sale, id)
 
-  ExState.transition(sale, :cancel)
+  ExState.transition(sale, :cancel, user_id: user_id)
+end
+```
+
+### Completing Steps
+
+```elixir
+def acknowledge_receipt(id, user_id: user_id) do
+  sale = Repo.get(Sale, id)
+
+  ExState.complete(sale, :acknowledge_receipt, user_id: user_id)
 end
 ```
 
