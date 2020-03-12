@@ -39,9 +39,12 @@ defmodule ExState.TestSupport.SaleWorkflow do
       on_completed :close, :closed
     end
 
-    state :closed
+    state :closed do
+      final
+    end
 
     state :cancelled do
+      final
       on_entry :update_cancelled_at
     end
   end

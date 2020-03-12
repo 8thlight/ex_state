@@ -74,12 +74,18 @@ defmodule ExState.Definition.CompilerTest do
         end
       end
 
-      state :rejected
-      state :closed
+      state :rejected do
+        final
+      end
+
+      state :closed do
+        final
+      end
     end
 
+    def log_stuff(_), do: :ok
     def notify_working(_), do: :ok
-    def notify_not_workfing(_), do: :ok
+    def notify_not_working(_), do: :ok
   end
 
   test "compiles a workflow definition" do
@@ -91,18 +97,21 @@ defmodule ExState.Definition.CompilerTest do
                participants: [:buyer, :seller],
                states: %{
                  "closed" => %ExState.Definition.State{
+                   type: :final,
                    initial_state: nil,
                    name: "closed",
                    steps: [],
                    transitions: %{}
                  },
                  "rejected" => %ExState.Definition.State{
+                   type: :final,
                    initial_state: nil,
                    name: "rejected",
                    steps: [],
                    transitions: %{}
                  },
                  "working" => %ExState.Definition.State{
+                   type: :compound,
                    actions: %{
                      entry: [:log_stuff, :notify_working],
                      exit: [:notify_not_working]
@@ -122,12 +131,14 @@ defmodule ExState.Definition.CompilerTest do
                    }
                  },
                  "working.execution" => %ExState.Definition.State{
+                   type: :compound,
                    initial_state: "working.execution.accepting",
                    name: "working.execution",
                    steps: [],
                    transitions: %{}
                  },
                  "working.execution.accepting" => %ExState.Definition.State{
+                   type: :atomic,
                    initial_state: nil,
                    name: "working.execution.accepting",
                    steps: [
@@ -154,12 +165,14 @@ defmodule ExState.Definition.CompilerTest do
                    }
                  },
                  "working.funding" => %ExState.Definition.State{
+                   type: :compound,
                    initial_state: "working.funding.sending_funds",
                    name: "working.funding",
                    steps: [],
                    transitions: %{}
                  },
                  "working.funding.sending_funds" => %ExState.Definition.State{
+                   type: :atomic,
                    initial_state: nil,
                    name: "working.funding.sending_funds",
                    steps: [
@@ -197,12 +210,14 @@ defmodule ExState.Definition.CompilerTest do
                    }
                  },
                  "working.subscription" => %ExState.Definition.State{
+                   type: :compound,
                    initial_state: "working.subscription.accepting",
                    name: "working.subscription",
                    steps: [],
                    transitions: %{}
                  },
                  "working.subscription.accepting" => %ExState.Definition.State{
+                   type: :atomic,
                    initial_state: nil,
                    name: "working.subscription.accepting",
                    steps: [
@@ -222,6 +237,7 @@ defmodule ExState.Definition.CompilerTest do
                    }
                  },
                  "working.subscription.confirming" => %ExState.Definition.State{
+                   type: :atomic,
                    initial_state: nil,
                    name: "working.subscription.confirming",
                    steps: [
@@ -242,6 +258,7 @@ defmodule ExState.Definition.CompilerTest do
                    }
                  },
                  "working.subscription.submitting" => %ExState.Definition.State{
+                   type: :atomic,
                    initial_state: nil,
                    name: "working.subscription.submitting",
                    steps: [

@@ -74,8 +74,13 @@ defmodule ExState.DefinitionTest do
         step :remind, repeatable: true
       end
 
-      state :good
-      state :bad
+      state :good do
+        final
+      end
+
+      state :bad do
+        final
+      end
     end
 
     def participant(m, :sender), do: m.sender_id
@@ -371,11 +376,11 @@ defmodule ExState.DefinitionTest do
 
       state :not_done do
         parallel do
-          step(:do_one_thing)
-          step(:do_another_thing)
+          step :do_one_thing
+          step :do_another_thing
         end
 
-        step(:do_last_thing)
+        step :do_last_thing
         on_completed :do_last_thing, :done
       end
 
@@ -777,5 +782,56 @@ defmodule ExState.DefinitionTest do
     assert {:ok, %{state: %{name: "done"}} = execution} =
       execution
       |> VirtualWorkflow.complete(:confirm)
+  end
+
+  defmodule FinalStateWorkflow do
+    use ExState.Definition
+
+    workflow "final_states" do
+      subject :message, Message
+
+      initial_state :composing
+
+      state :composing do
+        initial_state :thinking
+
+        state :thinking do
+          on :idea, :writing
+        end
+
+        state :writing do
+          on :words, :done
+        end
+
+        state :done do
+          final
+        end
+
+        on_final :sending
+      end
+
+      state :sending do
+        on :send, :sent
+      end
+
+      state :sent do
+        final
+      end
+    end
+  end
+
+  test "handles final states" do
+    assert %{state: %{name: "sending"}} = execution =
+      FinalStateWorkflow.new()
+      |> FinalStateWorkflow.transition!(:idea)
+      |> FinalStateWorkflow.transition!(:words)
+
+    refute FinalStateWorkflow.complete?(execution)
+
+    assert %{state: %{name: "sent"}} = execution =
+      execution
+      |> FinalStateWorkflow.transition!(:send)
+
+    assert FinalStateWorkflow.complete?(execution)
   end
 end

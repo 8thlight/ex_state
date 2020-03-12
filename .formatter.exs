@@ -12,6 +12,8 @@
     subject: 2,
     state: 1,
     state: 2,
+    virtual: 2,
+    using: 1,
     step: 1,
     step: 2,
     repeatable: 1,
@@ -24,6 +26,8 @@
     on_decision: 3,
     on_decision: 4,
     on_no_steps: 1,
-    on_no_steps: 2
+    on_no_steps: 2,
+    on_final: 1,
+    on_final: 2
   ]
 ]

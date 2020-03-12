@@ -139,3 +139,5 @@ end
 - Allow configurable primary key / UUID type for usage across different
   databases.
 - Allow configurable user / participant entity type and association.
+- [Transient states](https://xstate.js.org/docs/guides/statenodes.html#transient-state-nodes)
+- [Parallel states](https://xstate.js.org/docs/guides/parallel.html#parallel-state-nodes)

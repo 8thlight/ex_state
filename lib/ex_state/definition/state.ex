@@ -2,8 +2,11 @@ defmodule ExState.Definition.State do
   alias ExState.Definition.Step
   alias ExState.Definition.Event
 
+  @type state_type :: :atomic | :compound | :final
+
   @type t :: %__MODULE__{
           name: String.t(),
+          type: state_type(),
           initial_state: String.t(),
           steps: [Step.t()],
           ignored_steps: [Step.t()],
@@ -12,21 +15,13 @@ defmodule ExState.Definition.State do
         }
 
   defstruct name: nil,
+            type: :atomic,
             initial_state: nil,
             steps: [],
             ignored_steps: [],
             repeatable_steps: [],
             transitions: %{},
             actions: %{}
-
-  def final?(state) do
-    Enum.all?(state.steps, fn step -> step.complete? end) &&
-      Enum.empty?(external_transitions(state))
-  end
-
-  defp external_transitions(state) do
-    Enum.filter(state.transitions, fn {_, transition} -> transition.next_state != state.name end)
-  end
 
   def transition(state, event) do
     Map.get(state.transitions, event)
@@ -153,6 +148,9 @@ defmodule ExState.Definition.State do
 
     %__MODULE__{state | steps: steps}
   end
+
+  def final?(%__MODULE__{type: :final}), do: true
+  def final?(%__MODULE__{}), do: false
 
   def child?(%__MODULE__{} = state, %__MODULE__{} = child_maybe) do
     combine(drop_last(child_maybe.name)) == state.name

@@ -106,6 +106,7 @@ defmodule ExState.Execution do
     |> filter_steps()
     |> put_actions(opts)
     |> enter_initial_state()
+    |> handle_final()
     |> handle_no_steps()
   end
 
@@ -118,10 +119,18 @@ defmodule ExState.Execution do
   end
 
   defp handle_no_steps(%__MODULE__{state: %State{steps: []}} = execution) do
-    transition_maybe(execution, :no_steps)
+    transition_maybe(execution, :__no_steps__)
   end
 
   defp handle_no_steps(execution) do
+    execution
+  end
+
+  defp handle_final(%__MODULE__{state: %State{type: :final}} = execution) do
+    transition_maybe(execution, :__final__)
+  end
+
+  defp handle_final(execution) do
     execution
   end
 

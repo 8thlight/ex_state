@@ -94,9 +94,14 @@ defmodule ExState.Definition.Compiler do
     compile_state(env, current, states, body)
   end
 
-  defp compile_state(env, current, states, body) when is_list(body) do
-    Enum.reduce(body, states, fn next, acc ->
-      compile_state(env, current, acc, next)
+  defp compile_state(env, current, [%State{name: name} | _rest] = states, body) when is_list(body) do
+    Enum.reduce(body, states, fn
+      {:state, _, _} = next, [%State{name: ^name} = state | rest] ->
+        acc = [%State{state | type: :compound} | rest]
+        compile_state(env, current, acc, next)
+
+      next, acc ->
+        compile_state(env, current, acc, next)
     end)
   end
 
@@ -112,6 +117,10 @@ defmodule ExState.Definition.Compiler do
 
   defp compile_state(_env, current, [%State{} = state | rest], {:initial_state, _, [id]}) do
     [%State{state | initial_state: State.child(current, id)} | rest]
+  end
+
+  defp compile_state(_env, _current, [state | rest], {:final, _, nil}) do
+    [%State{state | type: :final} | rest]
   end
 
   defp compile_state(
@@ -187,11 +196,19 @@ defmodule ExState.Definition.Compiler do
   end
 
   defp compile_state(env, current, states, {:on_no_steps, _, [next_state]}) do
-    compile_state(env, current, states, {:on, [], [:no_steps, next_state]})
+    compile_state(env, current, states, {:on_no_steps, [], [next_state, []]})
   end
 
   defp compile_state(env, current, states, {:on_no_steps, _, [next_state, options]}) do
-    compile_state(env, current, states, {:on, [], [:no_steps, next_state, options]})
+    compile_state(env, current, states, {:on, [], [:__no_steps__, next_state, options]})
+  end
+
+  defp compile_state(env, current, states, {:on_final, _, [next_state]}) do
+    compile_state(env, current, states, {:on_final, [], [next_state, []]})
+  end
+
+  defp compile_state(env, current, states, {:on_final, _, [next_state, options]}) do
+    compile_state(env, current, states, {:on, [], [:__final__, next_state, options]})
   end
 
   defp compile_state(env, current, states, {:on, _, [id, next_state]}) do
