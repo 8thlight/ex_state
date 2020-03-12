@@ -1,4 +1,5 @@
-defmodule ExState.Definition.Execution do
+defmodule ExState.Execution do
+  alias ExState.Result
   alias ExState.Definition.Chart
   alias ExState.Definition.State
   alias ExState.Definition.Step
@@ -11,7 +12,8 @@ defmodule ExState.Definition.Execution do
           history: [State.t()],
           transitions: [Event.t()],
           callback_mod: module(),
-          subject: any()
+          subject: any(),
+          meta: map()
         }
 
   defstruct chart: %Chart{},
@@ -20,15 +22,18 @@ defmodule ExState.Definition.Execution do
             history: [],
             transitions: [],
             callback_mod: nil,
-            subject: nil
+            subject: nil,
+            meta: %{}
 
   @doc """
   Creates a new workflow execution from the initial state.
   """
+  @spec new(module(), struct()) :: t()
   def new(workflow, subject) do
     new(workflow.definition, workflow, subject)
   end
 
+  @spec new(Chart.t(), module(), struct()) :: t()
   def new(chart, callback_mod, subject) do
     %__MODULE__{chart: chart, callback_mod: callback_mod, subject: subject}
     |> enter_state(chart.initial_state)
@@ -37,10 +42,12 @@ defmodule ExState.Definition.Execution do
   @doc """
   Continues a workflow execution from the specifies state.
   """
+  @spec continue(module(), struct(), String.t()) :: t()
   def continue(workflow, subject, state_name) do
     continue(workflow.definition, workflow, subject, state_name)
   end
 
+  @spec continue(Chart.t(), module(), struct(), String.t()) :: t()
   def continue(chart, callback_mod, subject, state_name) when is_bitstring(state_name) do
     %__MODULE__{chart: chart, callback_mod: callback_mod, subject: subject}
     |> enter_state(state_name, entry_actions: false)
@@ -50,6 +57,7 @@ defmodule ExState.Definition.Execution do
   Continues a workflow execution with the completed steps.
   Use in conjunction with `continue` to resume execution.
   """
+  @spec with_completed(t(), String.t(), String.t(), any()) :: t()
   def with_completed(execution, state_name, step_name, decision \\ nil)
 
   def with_completed(
@@ -80,6 +88,11 @@ defmodule ExState.Definition.Execution do
     end
   end
 
+  @spec with_meta(t(), any(), any()) :: t()
+  def with_meta(execution, key, value) do
+    %__MODULE__{execution | meta: Map.put(execution.meta, key, value)}
+  end
+
   defp enter_state(execution, name, opts \\ [])
 
   defp enter_state(execution, name, opts) when is_bitstring(name) do
@@ -105,7 +118,7 @@ defmodule ExState.Definition.Execution do
   end
 
   defp handle_no_steps(%__MODULE__{state: %State{steps: []}} = execution) do
-    transition(execution, :no_steps)
+    transition_maybe(execution, :no_steps)
   end
 
   defp handle_no_steps(execution) do
@@ -165,6 +178,10 @@ defmodule ExState.Definition.Execution do
     end
   end
 
+  def complete!(execution, step_id) do
+    complete(execution, step_id) |> Result.get()
+  end
+
   @doc """
   Completes a decision and transitions the execution with `{:decision, step_id, decision}` event.
   """
@@ -185,6 +202,10 @@ defmodule ExState.Definition.Execution do
     end
   end
 
+  def decision!(execution, step_id, decision) do
+    decision(execution, step_id, decision) |> Result.get()
+  end
+
   defp step_error([]), do: "no next step"
   defp step_error([next_step]), do: "next step is: #{next_step.name}"
 
@@ -195,8 +216,8 @@ defmodule ExState.Definition.Execution do
   @doc """
   Transitions execution with the event and returns a result tuple.
   """
-  @spec transition_result(t(), Event.name()) :: {:ok, t()} | {:error, String.t(), t()}
-  def transition_result(execution, event) do
+  @spec transition(t(), Event.name()) :: {:ok, t()} | {:error, String.t(), t()}
+  def transition(execution, event) do
     case do_transition(execution, event) do
       {:ok, execution} ->
         {:ok, execution}
@@ -206,10 +227,14 @@ defmodule ExState.Definition.Execution do
     end
   end
 
+  def transition!(execution, event) do
+    transition(execution, event) |> Result.get()
+  end
+
   @doc """
   Transitions execution with the event and returns updated or unchanged execution.
   """
-  def transition(execution, event) do
+  def transition_maybe(execution, event) do
     case do_transition(execution, event) do
       {:ok, execution} ->
         execution
@@ -281,7 +306,7 @@ defmodule ExState.Definition.Execution do
   end
 
   def will_transition?(execution, event) do
-    transition(execution, event).state != execution.state
+    transition_maybe(execution, event).state != execution.state
   end
 
   def complete?(execution), do: State.final?(execution.state)
@@ -397,6 +422,7 @@ defmodule ExState.Definition.Execution do
   @doc """
   Executes any queued actions on the execution.
   """
+  @spec execute_actions(t()) :: {:ok, t(), map()} | {:error, t(), any()}
   def execute_actions(execution) do
     execution.actions
     |> Enum.reverse()

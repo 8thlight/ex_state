@@ -12,6 +12,7 @@ defmodule ExState.TestSupport.Migration do
 
     create table(:sales) do
       add(:product_id, :string, null: false)
+      add(:cancelled_at, :utc_datetime)
       add(:seller_id, references(:users))
       add(:buyer_id, references(:users))
       add(:workflow_id, references(:workflows, type: :uuid))

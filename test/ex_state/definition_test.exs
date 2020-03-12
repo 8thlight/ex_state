@@ -139,36 +139,36 @@ defmodule ExState.DefinitionTest do
   describe "transition/2" do
     test "defines event transition" do
       assert SimpleWorkflow.continue("a")
-             |> SimpleWorkflow.transition(:go_to_b)
+             |> SimpleWorkflow.transition_maybe(:go_to_b)
              |> Map.get(:state)
              |> Map.get(:name) == "b"
 
       assert SimpleWorkflow.continue("b")
-             |> SimpleWorkflow.transition(:go_to_b)
+             |> SimpleWorkflow.transition_maybe(:go_to_b)
              |> Map.get(:state)
              |> Map.get(:name) == "b"
 
       assert SimpleWorkflow.continue("c")
-             |> SimpleWorkflow.transition(:go_to_b)
+             |> SimpleWorkflow.transition_maybe(:go_to_b)
              |> Map.get(:state)
              |> Map.get(:name) == "c"
     end
 
     test "defines completed step transition" do
       assert SendWorkflow.continue("pending.sending", %Message{})
-             |> SendWorkflow.transition({:completed, :send})
+             |> SendWorkflow.transition_maybe({:completed, :send})
              |> Map.get(:state)
              |> Map.get(:name) == "pending.sent"
     end
 
     test "defines decision transition" do
       assert SendWorkflow.continue("confirmed.deciding", %Message{})
-             |> SendWorkflow.transition({:decision, :decide, :good})
+             |> SendWorkflow.transition_maybe({:decision, :decide, :good})
              |> Map.get(:state)
              |> Map.get(:name) == "good"
 
       assert SendWorkflow.continue("confirmed.deciding", %Message{})
-             |> SendWorkflow.transition({:decision, :decide, :bad})
+             |> SendWorkflow.transition_maybe({:decision, :decide, :bad})
              |> Map.get(:state)
              |> Map.get(:name) == "bad"
     end
@@ -179,15 +179,15 @@ defmodule ExState.DefinitionTest do
              |> Map.get(:name) == "pending.sending"
 
       assert SendWorkflow.new(%Message{})
-             |> SendWorkflow.transition({:completed, :send})
-             |> SendWorkflow.transition({:completed, :confirm})
+             |> SendWorkflow.transition_maybe({:completed, :send})
+             |> SendWorkflow.transition_maybe({:completed, :confirm})
              |> Map.get(:state)
              |> Map.get(:name) == "confirmed.deciding"
     end
 
     test "defines parent state transition" do
       assert SendWorkflow.continue("pending.sent", %Message{})
-             |> SendWorkflow.transition({:completed, :confirm})
+             |> SendWorkflow.transition_maybe({:completed, :confirm})
              |> Map.get(:state)
              |> Map.get(:name) == "confirmed.deciding"
     end
@@ -195,9 +195,9 @@ defmodule ExState.DefinitionTest do
     test "completes a workflow" do
       execution =
         SendWorkflow.new(%Message{})
-        |> SendWorkflow.transition({:completed, :send})
-        |> SendWorkflow.transition({:completed, :confirm})
-        |> SendWorkflow.transition({:decision, :decide, :good})
+        |> SendWorkflow.transition_maybe({:completed, :send})
+        |> SendWorkflow.transition_maybe({:completed, :confirm})
+        |> SendWorkflow.transition_maybe({:decision, :decide, :good})
 
       assert execution.state.name == "good"
       assert SendWorkflow.complete?(execution)
@@ -206,7 +206,7 @@ defmodule ExState.DefinitionTest do
     test "passes event to parent states" do
       execution =
         SendWorkflow.new(%Message{})
-        |> SendWorkflow.transition(:cancel)
+        |> SendWorkflow.transition_maybe(:cancel)
 
       assert execution.state.name == "cancelled"
     end
@@ -214,12 +214,12 @@ defmodule ExState.DefinitionTest do
     test "ignores invalid transitions" do
       execution =
         SendWorkflow.new(%Message{})
-        |> SendWorkflow.transition({:completed, :prepare})
-        |> SendWorkflow.transition({:completed, :review})
-        |> SendWorkflow.transition({:completed, :send})
-        |> SendWorkflow.transition({:completed, :confirm})
-        |> SendWorkflow.transition(:cancel)
-        |> SendWorkflow.transition({:decision, :decide, :good})
+        |> SendWorkflow.transition_maybe({:completed, :prepare})
+        |> SendWorkflow.transition_maybe({:completed, :review})
+        |> SendWorkflow.transition_maybe({:completed, :send})
+        |> SendWorkflow.transition_maybe({:completed, :confirm})
+        |> SendWorkflow.transition_maybe(:cancel)
+        |> SendWorkflow.transition_maybe({:decision, :decide, :good})
 
       assert execution.state.name == "good"
     end
@@ -227,8 +227,8 @@ defmodule ExState.DefinitionTest do
     test "allows defined internal transitions" do
       assert {:ok, _} =
                SendWorkflow.new(%Message{})
+               |> SendWorkflow.transition!(:cancel)
                |> SendWorkflow.transition(:cancel)
-               |> SendWorkflow.transition_result(:cancel)
     end
 
     test "returns triggered actions" do
@@ -238,7 +238,7 @@ defmodule ExState.DefinitionTest do
                :notify_started
              ] =
                SendWorkflow.new(%Message{})
-               |> SendWorkflow.transition(:cancel)
+               |> SendWorkflow.transition_maybe(:cancel)
                |> Map.get(:actions)
 
       assert [
@@ -246,8 +246,8 @@ defmodule ExState.DefinitionTest do
                :notify_started
              ] =
                SendWorkflow.new(%Message{})
-               |> SendWorkflow.transition({:completed, :send})
-               |> SendWorkflow.transition({:completed, :confirm})
+               |> SendWorkflow.transition_maybe({:completed, :send})
+               |> SendWorkflow.transition_maybe({:completed, :confirm})
                |> Map.get(:actions)
     end
 
@@ -257,7 +257,7 @@ defmodule ExState.DefinitionTest do
                :log_stuff
              ] =
                SendWorkflow.continue("pending", %Message{})
-               |> SendWorkflow.transition(:cancel)
+               |> SendWorkflow.transition_maybe(:cancel)
                |> Map.get(:actions)
 
       assert [
@@ -265,15 +265,15 @@ defmodule ExState.DefinitionTest do
                :notify_started
              ] =
                SendWorkflow.new(%Message{})
-               |> SendWorkflow.transition({:completed, :send})
-               |> SendWorkflow.transition({:completed, :confirm})
+               |> SendWorkflow.transition_maybe({:completed, :send})
+               |> SendWorkflow.transition_maybe({:completed, :confirm})
                |> Map.get(:actions)
     end
 
     test "executes triggered actions" do
       {:ok, execution, results} =
         SendWorkflow.new(%Message{})
-        |> SendWorkflow.transition(:cancel)
+        |> SendWorkflow.transition_maybe(:cancel)
         |> SendWorkflow.execute_actions()
 
       assert execution.state.name == "cancelled"
@@ -326,7 +326,7 @@ defmodule ExState.DefinitionTest do
     test "completes step returns ok for repeatable last step" do
       assert {:ok, %{state: %{name: "ignored"}} = execution} =
                SendWorkflow.new(%Message{})
-               |> SendWorkflow.transition(:ignore)
+               |> SendWorkflow.transition_maybe(:ignore)
                |> SendWorkflow.complete(:remind)
 
       assert {:ok, %{state: %{name: "ignored"}}} =
@@ -442,7 +442,7 @@ defmodule ExState.DefinitionTest do
       state :done
     end
 
-    def guard_transition(message, :feedback, :done) do
+    def guard_transition(message, _, :done) do
       if message.feedback == "too short" do
         {:error, "feedback is too short to be done"}
       else
@@ -464,6 +464,15 @@ defmodule ExState.DefinitionTest do
       assert {:error, _, _} =
                DecisionWorkflow.new(%Message{})
                |> DecisionWorkflow.decision(:rate, :something_else)
+    end
+
+    test "returns error for guarded transition" do
+      assert {:error, reason, _} =
+               DecisionWorkflow.continue("feedback", %Message{feedback: "too short"})
+               |> DecisionWorkflow.with_completed("feedback", "confirm_rating")
+               |> DecisionWorkflow.complete(:provide_feedback)
+
+      assert reason == "feedback is too short to be done"
     end
 
     test "handles repeatable decision" do

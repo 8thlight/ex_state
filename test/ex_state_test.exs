@@ -25,16 +25,15 @@ defmodule ExStateTest do
     test "creates a workflow for a workflowable subject" do
       sale = create_sale()
 
-      {:ok, %{workflow: workflow, subject: subject}} = ExState.create(sale)
+      {:ok, %{subject: sale}} = ExState.create(sale)
 
-      assert subject.workflow_id == workflow.id
-      refute workflow.complete?
-      assert workflow.state == "pending"
+      refute sale.workflow.complete?
+      assert sale.workflow.state == "pending"
 
       assert [
                %{name: "buyer"},
                %{name: "seller"}
-             ] = Enum.sort_by(workflow.participants, & &1.name)
+             ] = Enum.sort_by(sale.workflow.participants, & &1.name)
 
       assert [
                %{state: "pending", name: "attach_document", complete?: false},
@@ -42,37 +41,56 @@ defmodule ExStateTest do
                %{state: "receipt_acknowledged", name: "close", complete?: false},
                %{state: "sent", name: "close", complete?: false},
                %{state: "sent", name: "acknowledge_receipt", complete?: false},
-             ] = order_steps(workflow.steps)
+             ] = order_steps(sale.workflow.steps)
     end
   end
 
-  describe "event/3" do
+  describe "transition/3" do
     setup do
       sale = create_sale()
 
-      {:ok, %{workflow: workflow, subject: sale}} = ExState.create(sale)
+      {:ok, %{subject: sale}} = ExState.create(sale)
 
-      [sale: sale, workflow: workflow]
+      [sale: sale]
     end
 
     test "transitions state", %{sale: sale} do
-      {:ok, _workflow} = ExState.complete(sale, :attach_document)
-      {:ok, _workflow} = ExState.complete(sale, :send)
-      {:ok, workflow} = ExState.event(sale, :cancelled)
+      {:ok, _} = ExState.complete(sale, :attach_document)
+      {:ok, _} = ExState.complete(sale, :send)
+      {:ok, sale} = ExState.transition(sale, :cancelled)
 
-      assert workflow.complete?
-      assert workflow.state == "cancelled"
+      assert sale.workflow.complete?
+      assert sale.workflow.state == "cancelled"
+    end
+
+    test "transitions state through execution module", %{sale: sale} do
+      {:ok, sale} =
+        sale
+        |> ExState.load()
+        |> ExState.Execution.complete!(:attach_document)
+        |> ExState.Execution.complete!(:send)
+        |> ExState.Execution.transition!(:cancelled)
+        |> ExState.persist()
+
+      assert sale.workflow.complete?
+      assert sale.workflow.state == "cancelled"
     end
 
     test "returns error for unknown transition", %{sale: sale} do
-      {:ok, _workflow} = ExState.complete(sale, :attach_document)
-      {:ok, _workflow} = ExState.complete(sale, :send)
-      {:ok, _workflow} = ExState.complete(sale, :acknowledge_receipt)
-      {:error, _} = ExState.event(sale, :cancelled)
-      workflow = ExState.get(sale)
+      {:ok, _} = ExState.complete(sale, :attach_document)
+      {:ok, _} = ExState.complete(sale, :send)
+      {:ok, _} = ExState.complete(sale, :acknowledge_receipt)
+      {:error, _} = ExState.transition(sale, :cancelled)
+      workflow = sale |> Ecto.assoc(:workflow) |> Repo.one()
 
       refute workflow.complete?
       assert workflow.state == "receipt_acknowledged"
+    end
+
+    test "returns subject without updates triggered in actions", %{sale: sale} do
+      {:ok, sale} = ExState.transition(sale, :cancelled)
+
+      assert sale.cancelled_at == nil
     end
   end
 
@@ -80,16 +98,16 @@ defmodule ExStateTest do
     setup do
       sale = create_sale()
 
-      {:ok, %{workflow: workflow, subject: sale}} = ExState.create(sale)
+      {:ok, %{subject: sale}} = ExState.create(sale)
 
-      [sale: sale, workflow: workflow]
+      [sale: sale]
     end
 
     test "completes a step", %{sale: sale} do
-      {:ok, workflow} = ExState.complete(sale, :attach_document)
+      {:ok, sale} = ExState.complete(sale, :attach_document)
 
-      refute workflow.complete?
-      assert workflow.state == "pending"
+      refute sale.workflow.complete?
+      assert sale.workflow.state == "pending"
 
       assert [
                %{state: "pending", name: "attach_document", complete?: true},
@@ -97,7 +115,7 @@ defmodule ExStateTest do
                %{state: "receipt_acknowledged", name: "close", complete?: false},
                %{state: "sent", name: "close", complete?: false},
                %{state: "sent", name: "acknowledge_receipt", complete?: false},
-             ] = order_steps(workflow.steps)
+             ] = order_steps(sale.workflow.steps)
     end
   end
 end

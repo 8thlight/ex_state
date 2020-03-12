@@ -8,7 +8,6 @@ defmodule ExState.Ecto.Workflow do
     field :name, :string
     field :state, :string
     field :complete?, :boolean, default: false, source: :is_complete
-    field :definition, :any, virtual: true
     field :lock_version, :integer, default: 1
 
     many_to_many :participants, WorkflowParticipant,

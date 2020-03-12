@@ -1,13 +1,6 @@
 defmodule ExState.Ecto.Query do
   import Ecto.Query
 
-  defmacro any_state(workflow, state) do
-    quote do
-      unquote(workflow).state == unquote(state) or
-        ilike(unquote(workflow).state, ^"#{unquote(state)}.%")
-    end
-  end
-
   @doc """
   where_state/2 takes a subject query and state and filters based on workflows that are in the
   exact state that is passed. Nested states can be passed as a list of states and will be converted

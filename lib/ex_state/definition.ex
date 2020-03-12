@@ -217,8 +217,8 @@ defmodule ExState.Definition do
   `guard_transition/3`.
   """
 
+  alias ExState.Execution
   alias ExState.Definition.Chart
-  alias ExState.Definition.Execution
 
   @type subject() :: any()
   @type state() :: atom()
@@ -268,7 +268,8 @@ defmodule ExState.Definition do
       def will_transition?(execution, event), do: Execution.will_transition?(execution, event)
       def complete?(execution), do: Execution.complete?(execution)
       def transition(execution, event), do: Execution.transition(execution, event)
-      def transition_result(execution, event), do: Execution.transition_result(execution, event)
+      def transition!(execution, event), do: Execution.transition!(execution, event)
+      def transition_maybe(execution, event), do: Execution.transition_maybe(execution, event)
       def complete(execution, step), do: Execution.complete(execution, step)
       def decision(execution, step, decision), do: Execution.decision(execution, step, decision)
       def execute_actions(execution), do: Execution.execute_actions(execution)

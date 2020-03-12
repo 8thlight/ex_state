@@ -10,6 +10,7 @@ defmodule ExState.TestSupport.Sale do
   schema "sales" do
     has_workflow SaleWorkflow
     field :product_id, :string
+    field :cancelled_at, :utc_datetime
     belongs_to :seller, User
     belongs_to :buyer, User
   end
@@ -20,7 +21,13 @@ defmodule ExState.TestSupport.Sale do
 
   def changeset(sale, params) do
     sale
-    |> cast(params, [:product_id, :seller_id, :buyer_id, :workflow_id])
+    |> cast(params, [
+      :product_id,
+      :cancelled_at,
+      :seller_id,
+      :buyer_id,
+      :workflow_id
+    ])
     |> validate_required([:product_id])
   end
 end

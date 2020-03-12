@@ -1,8 +1,8 @@
 defmodule ExState.Ecto.Multi do
-  alias Ecto.Multi
   alias ExState
+  alias Ecto.Multi
 
-  @spec create(Multi.t(), any()) :: Multi.t()
+  @spec create(Multi.t(), struct() | atom()) :: Multi.t()
   def create(%Multi{} = multi, subject_key) when is_atom(subject_key) do
     Multi.merge(multi, fn results ->
       ExState.create_multi(Map.get(results, subject_key))
@@ -15,22 +15,22 @@ defmodule ExState.Ecto.Multi do
     end)
   end
 
-  @spec event(Multi.t(), any(), any(), keyword()) :: Multi.t()
-  def event(multi, subject_or_key, event, opts \\ [])
+  @spec transition(Multi.t(), struct() | atom(), any(), keyword()) :: Multi.t()
+  def transition(multi, subject_or_key, event, opts \\ [])
 
-  def event(%Multi{} = multi, subject_key, event, opts) when is_atom(subject_key) do
+  def transition(%Multi{} = multi, subject_key, event, opts) when is_atom(subject_key) do
     Multi.run(multi, event, fn _repo, results ->
-      ExState.event(Map.get(results, subject_key), event, opts)
+      ExState.transition(Map.get(results, subject_key), event, opts)
     end)
   end
 
-  def event(%Multi{} = multi, subject, event, opts) do
+  def transition(%Multi{} = multi, subject, event, opts) do
     Multi.run(multi, event, fn _repo, _ ->
-      ExState.event(subject, event, opts)
+      ExState.transition(subject, event, opts)
     end)
   end
 
-  @spec complete(Multi.t(), any(), any(), keyword()) :: Multi.t()
+  @spec complete(Multi.t(), struct() | atom(), any(), keyword()) :: Multi.t()
   def complete(multi, subject_or_key, step_id, opts \\ [])
 
   def complete(%Multi{} = multi, subject_key, step_id, opts) when is_atom(subject_key) do
@@ -45,42 +45,7 @@ defmodule ExState.Ecto.Multi do
     end)
   end
 
-  @type complete_condition :: ExState.state() | (struct() -> boolean())
-  @spec complete_when(Multi.t(), complete_condition(), any(), any(), keyword()) :: Multi.t()
-  def complete_when(multi, condition, subject_or_key, step_id, opts \\ [])
-
-  def complete_when(%Multi{} = multi, condition, subject_key, step_id, opts)
-      when is_atom(subject_key) do
-    Multi.run(multi, step_id, fn _repo, results ->
-      subject = Map.get(results, subject_key)
-
-      if should_complete?(subject, condition) do
-        ExState.complete(subject, step_id, opts)
-      else
-        {:ok, nil}
-      end
-    end)
-  end
-
-  def complete_when(%Multi{} = multi, condition, subject, step_id, opts) do
-    Multi.run(multi, step_id, fn _repo, _ ->
-      if should_complete?(subject, condition) do
-        ExState.complete(subject, step_id, opts)
-      else
-        {:ok, nil}
-      end
-    end)
-  end
-
-  defp should_complete?(subject, condition) when is_function(condition, 1) do
-    condition.(subject)
-  end
-
-  defp should_complete?(subject, state) do
-    ExState.state?(subject, state)
-  end
-
-  @spec decision(Multi.t(), any(), any(), any(), keyword()) :: Multi.t()
+  @spec decision(Multi.t(), struct() | atom(), any(), any(), keyword()) :: Multi.t()
   def decision(multi, subject_or_key, step_id, decision, opts \\ [])
 
   def decision(%Multi{} = multi, subject_key, step_id, decision, opts)

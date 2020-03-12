@@ -40,7 +40,10 @@ defmodule ExState.TestSupport.SaleWorkflow do
     end
 
     state :closed
-    state :cancelled
+
+    state :cancelled do
+      on_entry :update_cancelled_at
+    end
   end
 
   def participant(sale, :seller) do
@@ -60,4 +63,10 @@ defmodule ExState.TestSupport.SaleWorkflow do
   def use_step?(_sale, _step), do: true
 
   def guard_transition(_sale, _from, _to), do: :ok
+
+  def update_cancelled_at(sale) do
+    sale
+    |> Sale.changeset(%{cancelled_at: DateTime.utc_now()})
+    |> Repo.update()
+  end
 end

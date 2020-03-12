@@ -44,4 +44,9 @@ defmodule ExState.Ecto.Subject do
   def workflow_assoc_name(%module{} = _subject) do
     module.workflow_assoc_name()
   end
+
+  def put_workflow(subject, workflow) do
+    subject
+    |> Map.put(workflow_assoc_name(subject), workflow)
+  end
 end
