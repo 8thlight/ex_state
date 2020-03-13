@@ -55,5 +55,6 @@ defmodule ExState.TestSupport.SaleWorkflow do
     sale
     |> Sale.changeset(%{cancelled_at: DateTime.utc_now()})
     |> Repo.update()
+    |> update()
   end
 end

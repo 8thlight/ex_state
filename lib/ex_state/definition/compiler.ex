@@ -94,7 +94,8 @@ defmodule ExState.Definition.Compiler do
     compile_state(env, current, states, body)
   end
 
-  defp compile_state(env, current, [%State{name: name} | _rest] = states, body) when is_list(body) do
+  defp compile_state(env, current, [%State{name: name} | _rest] = states, body)
+       when is_list(body) do
     Enum.reduce(body, states, fn
       {:state, _, _} = next, [%State{name: ^name} = state | rest] ->
         acc = [%State{state | type: :compound} | rest]

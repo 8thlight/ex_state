@@ -98,27 +98,46 @@ defmodule ExState do
 
   @spec persist(Execution.t()) :: {:ok, struct()} | {:error, any()}
   def persist(execution) do
+    actions_multi =
+      Enum.reduce(Enum.reverse(execution.actions), Multi.new(), fn action, multi ->
+        Multi.run(multi, action, fn _, _ ->
+          case Execution.execute_action(execution, action) do
+            {:ok, execution, result} -> {:ok, {execution, result}}
+            e -> e
+          end
+        end)
+      end)
+
     Multi.new()
     |> Multi.run(:workflow, fn _repo, _ ->
       workflow = Map.fetch!(execution.meta, :workflow)
       opts = Map.get(execution.meta, :opts, [])
       update_workflow(workflow, execution, opts)
     end)
-    |> Multi.append(execute_actions(execution))
+    |> Multi.append(actions_multi)
     |> repo().transaction()
-    |> Result.Multi.extract(:workflow)
-    |> Result.map(&Subject.put_workflow(execution.subject, &1))
-  end
+    |> case do
+      {:ok, %{workflow: workflow} = results} ->
+        actions_multi
+        |> Multi.to_list()
+        |> List.last()
+        |> case do
+          nil ->
+            {:ok, Subject.put_workflow(execution.subject, workflow)}
 
-  defp execute_actions(execution) do
-    Enum.reduce(Enum.reverse(execution.actions), Multi.new(), fn action, multi ->
-      Multi.run(multi, action, fn _, _ ->
-        case Execution.execute_action(execution, action) do
-          :ok -> {:ok, nil}
-          result -> result
+          {action, _} ->
+            case Map.get(results, action) do
+              nil ->
+                {:ok, Subject.put_workflow(execution.subject, workflow)}
+
+              {execution, _} ->
+                {:ok, Subject.put_workflow(execution.subject, workflow)}
+            end
         end
-      end)
-    end)
+
+      {:error, _, reason, _} ->
+        {:error, reason}
+    end
   end
 
   defp update_workflow(workflow, execution, opts) do

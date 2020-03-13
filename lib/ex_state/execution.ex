@@ -40,7 +40,7 @@ defmodule ExState.Execution do
   end
 
   @doc """
-  Continues a workflow execution from the specifies state.
+  Continues a workflow execution from the specified state.
   """
   @spec continue(module(), struct(), String.t()) :: t()
   def continue(workflow, subject, state_name) do
@@ -425,19 +425,21 @@ defmodule ExState.Execution do
   def execute_actions(execution) do
     execution.actions
     |> Enum.reverse()
-    |> Enum.reduce({:ok, %{}}, fn
+    |> Enum.reduce({:ok, execution, %{}}, fn
       _next, {:error, _reason} = e ->
         e
 
-      next, {:ok, acc} ->
+      next, {:ok, execution, acc} ->
         case execute_action(execution, next) do
-          :ok -> {:ok, acc}
-          {:ok, result} -> {:ok, Map.put(acc, next, result)}
-          {:error, _reason} = e -> e
+          {:ok, execution, result} ->
+            {:ok, execution, Map.put(acc, next, result)}
+
+          {:error, _reason} = e ->
+            e
         end
     end)
     |> case do
-      {:ok, results} ->
+      {:ok, execution, results} ->
         {:ok, reset_actions(execution), results}
 
       {:error, reason} ->
@@ -448,9 +450,24 @@ defmodule ExState.Execution do
   @doc """
   Executes the provided action name through the callback module.
   """
+  @spec execute_action(t(), atom()) :: {:ok, t(), any()} | {:error, any()}
   def execute_action(execution, action) do
     if function_exported?(execution.callback_mod, action, 1) do
-      apply(execution.callback_mod, action, [execution.subject])
+      case apply(execution.callback_mod, action, [execution.subject]) do
+        :ok ->
+          {:ok, execution, nil}
+
+        {:ok, result} ->
+          {:ok, execution, result}
+
+        {:update, subject} ->
+          {:ok, %__MODULE__{execution | subject: subject}, subject}
+
+        e ->
+          e
+      end
+    else
+      {:error, "no function defined for action #{action}"}
     end
   end
 

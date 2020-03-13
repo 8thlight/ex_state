@@ -9,6 +9,7 @@ defmodule ExStateTest do
   def create_sale do
     seller = User.new(%{name: "seller"}) |> Repo.insert!()
     buyer = User.new(%{name: "seller"}) |> Repo.insert!()
+
     Sale.new(%{
       product_id: "abc123",
       seller_id: seller.id,
@@ -35,7 +36,7 @@ defmodule ExStateTest do
                %{state: "pending", name: "send", complete?: false},
                %{state: "receipt_acknowledged", name: "close", complete?: false},
                %{state: "sent", name: "close", complete?: false},
-               %{state: "sent", name: "acknowledge_receipt", complete?: false},
+               %{state: "sent", name: "acknowledge_receipt", complete?: false}
              ] = order_steps(sale.workflow.steps)
     end
   end
@@ -82,10 +83,10 @@ defmodule ExStateTest do
       assert workflow.state == "receipt_acknowledged"
     end
 
-    test "returns subject without updates triggered in actions", %{sale: sale} do
+    test "returns subject with updates provided in actions", %{sale: sale} do
       {:ok, sale} = ExState.transition(sale, :cancelled)
 
-      assert sale.cancelled_at == nil
+      assert sale.cancelled_at != nil
     end
   end
 
@@ -109,7 +110,7 @@ defmodule ExStateTest do
                %{state: "pending", name: "send", complete?: false},
                %{state: "receipt_acknowledged", name: "close", complete?: false},
                %{state: "sent", name: "close", complete?: false},
-               %{state: "sent", name: "acknowledge_receipt", complete?: false},
+               %{state: "sent", name: "acknowledge_receipt", complete?: false}
              ] = order_steps(sale.workflow.steps)
     end
 

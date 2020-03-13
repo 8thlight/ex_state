@@ -284,6 +284,7 @@ defmodule ExState.DefinitionTest do
       assert execution.state.name == "cancelled"
 
       assert results == %{
+               log_stuff: nil,
                notify_started: "notified started",
                notify_cancelled: "notified cancelled"
              }
@@ -516,7 +517,7 @@ defmodule ExState.DefinitionTest do
                subject: {:message, message},
                participants: [
                  "recipient",
-                 "sender",
+                 "sender"
                ],
                steps: [
                  %{
@@ -581,7 +582,7 @@ defmodule ExState.DefinitionTest do
                subject: {:message, confirmed_message},
                participants: [
                  "recipient",
-                 "sender",
+                 "sender"
                ],
                steps: [
                  %{
@@ -642,7 +643,7 @@ defmodule ExState.DefinitionTest do
                subject: {:message, message},
                participants: [
                  "recipient",
-                 "sender",
+                 "sender"
                ],
                steps: [
                  %{
@@ -760,28 +761,28 @@ defmodule ExState.DefinitionTest do
 
   test "uses virtual states" do
     assert {:ok, %{state: %{name: "completing_a.working"}} = execution} =
-      VirtualWorkflow.new()
-      |> VirtualWorkflow.complete(:read)
+             VirtualWorkflow.new()
+             |> VirtualWorkflow.complete(:read)
 
     assert {:ok, %{state: %{name: "completing_a.working"}} = execution} =
-      execution
-      |> VirtualWorkflow.complete(:sign)
+             execution
+             |> VirtualWorkflow.complete(:sign)
 
     assert {:ok, %{state: %{name: "completing_b.working"}} = execution} =
-      execution
-      |> VirtualWorkflow.complete(:confirm)
+             execution
+             |> VirtualWorkflow.complete(:confirm)
 
     assert {:ok, %{state: %{name: "completing_b.working"}} = execution} =
-      execution
-      |> VirtualWorkflow.complete(:read)
+             execution
+             |> VirtualWorkflow.complete(:read)
 
     assert {:ok, %{state: %{name: "completing_b.working"}} = execution} =
-      execution
-      |> VirtualWorkflow.complete(:sign)
+             execution
+             |> VirtualWorkflow.complete(:sign)
 
     assert {:ok, %{state: %{name: "done"}} = execution} =
-      execution
-      |> VirtualWorkflow.complete(:confirm)
+             execution
+             |> VirtualWorkflow.complete(:confirm)
   end
 
   defmodule FinalStateWorkflow do
@@ -821,16 +822,18 @@ defmodule ExState.DefinitionTest do
   end
 
   test "handles final states" do
-    assert %{state: %{name: "sending"}} = execution =
-      FinalStateWorkflow.new()
-      |> FinalStateWorkflow.transition!(:idea)
-      |> FinalStateWorkflow.transition!(:words)
+    assert %{state: %{name: "sending"}} =
+             execution =
+             FinalStateWorkflow.new()
+             |> FinalStateWorkflow.transition!(:idea)
+             |> FinalStateWorkflow.transition!(:words)
 
     refute FinalStateWorkflow.complete?(execution)
 
-    assert %{state: %{name: "sent"}} = execution =
-      execution
-      |> FinalStateWorkflow.transition!(:send)
+    assert %{state: %{name: "sent"}} =
+             execution =
+             execution
+             |> FinalStateWorkflow.transition!(:send)
 
     assert FinalStateWorkflow.complete?(execution)
   end

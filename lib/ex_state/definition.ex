@@ -197,21 +197,22 @@ defmodule ExState.Definition do
     state :one do
       on_entry :send_notification
       on_entry :log_activity
-      on :done, :two, action: [:create_something]
+      on :done, :two, action: [:update_done_at]
     end
 
     state :two do
       step :send_something
     end
 
-    def create_something(subject), do: :ok
+    def update_done_at(subject) do
+      {:update, %{subject | done_at: now()}}
+    end
 
-  Actions should not be considered to be order dependent, or transactional.
-  However, actions can be executed transactionally based on workflow execution
-  implementations. A default `Execution.execute_actions/1` function is provided
-  which executes triggered actions in a fire-and-forget fashion. See
-  `ExState.execute_actions/1` for an example of transactionally executing
-  actions.
+  Actions can return a `{:update, subject}` tuple to add the updated
+  subject to the execution state. A default `Execution.execute_actions/1`
+  function is provided which executes triggered actions in a fire-and-forget
+  fashion. See `ExState.execute_actions/1` for an example of transactionally
+  executing actions.
 
   Actions should also not explicity guard state transitions. Guards should use
   `guard_transition/3`.
@@ -275,4 +276,7 @@ defmodule ExState.Definition do
       def dump(execution), do: Execution.dump(execution)
     end
   end
+
+  def update({:ok, subject}), do: {:update, subject}
+  def update(x), do: x
 end

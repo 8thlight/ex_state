@@ -32,7 +32,7 @@ defmodule ExState.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:jason, "~> 1.0"},
       {:gettext, "~> 0.11"},
-      {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false}
     ]
   end
 end

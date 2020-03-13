@@ -10,5 +10,4 @@ config :ex_state, ExState.TestSupport.Repo,
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
-config :ex_state, ExState,
-  repo: ExState.TestSupport.Repo
+config :ex_state, ExState, repo: ExState.TestSupport.Repo
