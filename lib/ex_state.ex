@@ -186,11 +186,7 @@ defmodule ExState do
   end
 
   defp find_or_create_participant(params) do
-    %{
-      name: Atom.to_string(params.name),
-      entity_id: params.id
-    }
-    |> WorkflowParticipant.new()
+    WorkflowParticipant.new(params)
     |> repo().insert(
       on_conflict: {:replace_all_except, [:id]},
       conflict_target: [:name, :entity_id]

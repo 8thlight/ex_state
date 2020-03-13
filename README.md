@@ -159,6 +159,7 @@ end
   databases.
 - Allow configurable user / participant entity type and association.
 - Tracking event history with metadata.
+- Define schema for serialization / json API usage / client consumption.
 - [Transient states](https://xstate.js.org/docs/guides/statenodes.html#transient-state-nodes)
 - [Parallel states](https://xstate.js.org/docs/guides/parallel.html#parallel-state-nodes)
 - [History states](https://xstate.js.org/docs/guides/history.html#history-state-configuration)

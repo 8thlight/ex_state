@@ -324,7 +324,7 @@ defmodule ExState.Execution do
   Returns serializable data representing the execution.
   """
   def dump(execution) do
-    participants = participants(execution)
+    participants = dump_participants(execution)
 
     %{
       name: execution.chart.name,
@@ -344,6 +344,28 @@ defmodule ExState.Execution do
     end
   end
 
+  defp dump_participants(execution) do
+    Enum.map(execution.chart.participants, fn name ->
+      dump_participant(execution, name)
+    end)
+  end
+
+  defp dump_participant(execution, name) do
+    if function_exported?(execution.callback_mod, :participant, 2) do
+      %{
+        name: Atom.to_string(name),
+        entity_id: execution.callback_mod.participant(execution.subject, name)
+      }
+    else
+      %{name: name}
+    end
+  end
+
+  defp find_participant(%{participant: nil}, _participants), do: nil
+  defp find_participant(%{participant: name}, participants) do
+    Enum.find(participants, fn p -> p.name == Atom.to_string(name) end)
+  end
+
   defp dump_steps(execution, participants) do
     execution
     |> merge_states()
@@ -357,7 +379,7 @@ defmodule ExState.Execution do
           name: step.name,
           complete?: step.complete?,
           decision: step.decision,
-          participant: Enum.find(participants, fn p -> p.name == step.participant end)
+          participant: find_participant(step, participants)
         }
       end)
     end)
@@ -383,23 +405,6 @@ defmodule ExState.Execution do
       execution.callback_mod.use_step?(execution.subject, Step.id(step))
     else
       true
-    end
-  end
-
-  defp participants(execution) do
-    Enum.map(execution.chart.participants, fn name ->
-      participant(execution, name)
-    end)
-  end
-
-  defp participant(execution, name) do
-    if function_exported?(execution.callback_mod, :participant, 2) do
-      %{
-        name: name,
-        id: execution.callback_mod.participant(execution.subject, name)
-      }
-    else
-      nil
     end
   end
 

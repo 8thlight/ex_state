@@ -515,8 +515,8 @@ defmodule ExState.DefinitionTest do
                state: "pending.sending",
                subject: {:message, message},
                participants: [
-                 %{name: :recipient, id: 2},
-                 %{name: :sender, id: 1}
+                 %{name: "recipient", entity_id: 2},
+                 %{name: "sender", entity_id: 1}
                ],
                steps: [
                  %{
@@ -538,7 +538,7 @@ defmodule ExState.DefinitionTest do
                  %{
                    name: "send",
                    order: 3,
-                   participant: %{id: 1, name: :sender},
+                   participant: %{entity_id: 1, name: "sender"},
                    state: "pending.sending",
                    complete?: false,
                    decision: nil
@@ -546,7 +546,7 @@ defmodule ExState.DefinitionTest do
                  %{
                    name: "review",
                    order: 2,
-                   participant: %{id: 1, name: :sender},
+                   participant: %{entity_id: 1, name: "sender"},
                    state: "pending.sending",
                    complete?: false,
                    decision: nil
@@ -554,7 +554,7 @@ defmodule ExState.DefinitionTest do
                  %{
                    name: "prepare",
                    order: 1,
-                   participant: %{id: 1, name: :sender},
+                   participant: %{entity_id: 1, name: "sender"},
                    state: "pending.sending",
                    complete?: false,
                    decision: nil
@@ -562,7 +562,7 @@ defmodule ExState.DefinitionTest do
                  %{
                    name: "confirm",
                    order: 1,
-                   participant: %{id: 2, name: :recipient},
+                   participant: %{entity_id: 2, name: "recipient"},
                    state: "pending.sent",
                    complete?: false,
                    decision: nil
@@ -580,8 +580,8 @@ defmodule ExState.DefinitionTest do
                state: "pending.sending",
                subject: {:message, confirmed_message},
                participants: [
-                 %{name: :recipient, id: 2},
-                 %{name: :sender, id: 1}
+                 %{name: "recipient", entity_id: 2},
+                 %{name: "sender", entity_id: 1}
                ],
                steps: [
                  %{
@@ -603,7 +603,7 @@ defmodule ExState.DefinitionTest do
                  %{
                    name: "send",
                    order: 3,
-                   participant: %{id: 1, name: :sender},
+                   participant: %{entity_id: 1, name: "sender"},
                    state: "pending.sending",
                    complete?: false,
                    decision: nil
@@ -611,7 +611,7 @@ defmodule ExState.DefinitionTest do
                  %{
                    name: "review",
                    order: 2,
-                   participant: %{id: 1, name: :sender},
+                   participant: %{entity_id: 1, name: "sender"},
                    state: "pending.sending",
                    complete?: false,
                    decision: nil
@@ -619,7 +619,7 @@ defmodule ExState.DefinitionTest do
                  %{
                    name: "prepare",
                    order: 1,
-                   participant: %{id: 1, name: :sender},
+                   participant: %{entity_id: 1, name: "sender"},
                    state: "pending.sending",
                    complete?: false,
                    decision: nil
@@ -641,8 +641,8 @@ defmodule ExState.DefinitionTest do
                state: "confirmed.deciding",
                subject: {:message, message},
                participants: [
-                 %{name: :recipient, id: 2},
-                 %{name: :sender, id: 1}
+                 %{name: "recipient", entity_id: 2},
+                 %{name: "sender", entity_id: 1}
                ],
                steps: [
                  %{
@@ -664,7 +664,7 @@ defmodule ExState.DefinitionTest do
                  %{
                    name: "send",
                    order: 3,
-                   participant: %{id: 1, name: :sender},
+                   participant: %{entity_id: 1, name: "sender"},
                    state: "pending.sending",
                    complete?: true,
                    decision: nil
@@ -672,7 +672,7 @@ defmodule ExState.DefinitionTest do
                  %{
                    name: "review",
                    order: 2,
-                   participant: %{id: 1, name: :sender},
+                   participant: %{entity_id: 1, name: "sender"},
                    state: "pending.sending",
                    complete?: true,
                    decision: nil
@@ -680,7 +680,7 @@ defmodule ExState.DefinitionTest do
                  %{
                    name: "prepare",
                    order: 1,
-                   participant: %{id: 1, name: :sender},
+                   participant: %{entity_id: 1, name: "sender"},
                    state: "pending.sending",
                    complete?: true,
                    decision: nil
@@ -688,7 +688,7 @@ defmodule ExState.DefinitionTest do
                  %{
                    name: "confirm",
                    order: 1,
-                   participant: %{id: 2, name: :recipient},
+                   participant: %{entity_id: 2, name: "recipient"},
                    state: "pending.sent",
                    complete?: false,
                    decision: nil
