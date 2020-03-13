@@ -1,4 +1,19 @@
 defmodule ExState.Ecto.Multi do
+  @moduledoc """
+  `ExState.Ecto.Multi` provides convencience functions for creating and
+  transitioning workflows in Ecto.Multi operations.
+
+  ## Example
+
+  def create_sale() do
+    Multi.new()
+    |> Multi.create(:sale, Sale.new())
+    |> ExState.Ecto.Multi.create(:sale)
+    |> ExState.Ecto.Multi.transition(:sale, :packed)
+    |> Repo.transaction()
+  end
+  """
+
   alias ExState
   alias Ecto.Multi
 

@@ -1,5 +1,7 @@
 defmodule ExState.Definition do
   @moduledoc """
+  `ExState.Definition` provides macros to define a workflow state chart.
+
   A workflow is defined with a name:
 
     workflow "make_deal" do

@@ -1,4 +1,94 @@
 defmodule ExState do
+  @moduledoc """
+  `ExState` loads and persists workflow execution to a database through Ecto.
+
+  The `ExState.Execution` is built through the subject's `:workflow`
+  association.
+
+  ## Subject Setup
+
+    defmodule ShipmentWorkflow do
+      use ExState.Definition
+
+      workflow "shipment" do
+        initial_state :preparing
+
+        state :preparing do
+          state :packing do
+            on :packed, :sealing
+          end
+
+          state :sealing do
+            on :unpack, :packing
+            on :sealed, :sealed
+          end
+
+          state :sealed do
+            final
+          end
+
+          on_final :shipping
+        end
+
+        state :shipping do
+          on :shipped, :in_transit
+        end
+
+        state :in_transit do
+          on :arrival, :arrived
+        end
+
+        state :arrived od
+          on :accepted, :complete
+          on :return, :returning
+        end
+
+        state :returning do
+          on :arrival, :returned
+        end
+
+        state :returned do
+          on :replace, :preparing
+        end
+
+        state :complete do
+          final
+        end
+      end
+    end
+
+    defmodule Shipment do
+      use Ecto.Schema
+      use ExState.Ecto.Subject
+
+      schema "shipments" do
+        has_workflow ShipmentWorkflow
+      end
+    end
+
+  ## Creating
+
+    sale = %Sale{id: 1}
+
+    execution = ExState.create(sale) #=> %ExState.Execution{}
+
+  ## Updating
+
+    sale = %Sale{id: 1}
+
+    {:ok, sale} =
+      sale
+      |> ExState.load()
+      |> ExState.Execution.transition!(:packed)
+      |> ExState.Execution.transition!(:sealed)
+      |> ExState.persist()
+
+    sale.workflow.state #=> "shipping"
+
+    {:error, reason} = ExState.transition(sale, :return)
+    reason #=> "no transition from state shipping for event :return"
+  """
+
   import Ecto.Query
 
   alias ExState.Execution

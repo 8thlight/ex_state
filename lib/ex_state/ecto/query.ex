@@ -1,4 +1,9 @@
 defmodule ExState.Ecto.Query do
+  @moduledoc """
+  `ExState.Ecto.Query` provides functions for querying workflow state in the
+  database through Ecto.
+  """
+
   import Ecto.Query
 
   @doc """

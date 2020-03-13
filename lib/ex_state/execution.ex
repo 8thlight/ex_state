@@ -1,4 +1,8 @@
 defmodule ExState.Execution do
+  @moduledoc """
+  `ExState.Execution` executes state transitions with a state chart.
+  """
+
   alias ExState.Result
   alias ExState.Definition.Chart
   alias ExState.Definition.State
