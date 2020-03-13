@@ -2,13 +2,15 @@ defmodule ExState.TestSupport.Migration do
   use Ecto.Migration
 
   def up do
-    execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
-
-    ExState.Ecto.Migration.up()
-
     create table(:users) do
       add(:name, :string, null: false)
     end
+
+    ExState.Ecto.Migration.up(
+      install_pgcrypto: true,
+      users: {:users, :bigint},
+      participants: {:users, :bigint}
+    )
 
     create table(:sales) do
       add(:product_id, :string, null: false)

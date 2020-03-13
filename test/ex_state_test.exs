@@ -119,11 +119,12 @@ defmodule ExStateTest do
     end
 
     test "adds user metadata", %{sale: sale} do
-      {:ok, sale} = ExState.complete(sale, :attach_document, user_id: "user-1")
+      user = User.new(%{name: "seller"}) |> Repo.insert!()
+      {:ok, sale} = ExState.complete(sale, :attach_document, user_id: user.id)
 
       assert sale.workflow.steps
              |> Enum.find(fn s -> s.name == "attach_document" end)
-             |> Map.get(:completed_by_id) == "user-1"
+             |> Map.get(:completed_by_id) == user.id
     end
   end
 end

@@ -6,7 +6,7 @@ defmodule ExState.Ecto.WorkflowParticipant do
   schema "workflow_participants" do
     field :name, :string
     # TODO
-    field :entity_id, :string
+    field :entity_id, :integer
     has_many :steps, WorkflowStep, foreign_key: :participant_id
     timestamps()
   end

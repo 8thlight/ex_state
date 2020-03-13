@@ -12,7 +12,7 @@ defmodule ExState.Ecto.WorkflowStep do
     field :complete?, :boolean, default: false, source: :is_complete
     field :completed_at, :utc_datetime_usec
     # TODO
-    field :completed_by_id, :string
+    field :completed_by_id, :integer
 
     belongs_to :workflow, Workflow
 

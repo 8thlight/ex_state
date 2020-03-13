@@ -52,14 +52,14 @@ defmodule ExState.TestSupport.SaleWorkflow do
   def participant(sale, :seller) do
     sale
     |> Ecto.assoc(:seller)
-    |> select([u], u.name)
+    |> select([u], u.id)
     |> Repo.one()
   end
 
   def participant(sale, :buyer) do
     sale
     |> Ecto.assoc(:buyer)
-    |> select([u], u.name)
+    |> select([u], u.id)
     |> Repo.one()
   end
 
