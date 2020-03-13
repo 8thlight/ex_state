@@ -9,7 +9,7 @@ defmodule ExState.Definition do
   ## Subject
 
   The subject of the workflow is used to determine dynamic behavior through
-  callbacks `participant/2`, `use_step?/2`, and `guard_transition/3`. Subject
+  callbacks `use_step?/2`, and `guard_transition/3`. Subject
   names and types are defined using the `subject` keyword:
 
     subject {:deal, Deal}
@@ -223,10 +223,9 @@ defmodule ExState.Definition do
   @type subject() :: any()
   @type state() :: atom()
   @type step() :: atom()
-  @callback participant(subject(), atom()) :: any()
   @callback use_step?(subject(), step()) :: boolean()
   @callback guard_transition(subject(), state(), state()) :: :ok | {:error, any()}
-  @optional_callbacks participant: 2, use_step?: 2, guard_transition: 3
+  @optional_callbacks use_step?: 2, guard_transition: 3
 
   defmacro __using__(_) do
     quote do

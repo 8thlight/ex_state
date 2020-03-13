@@ -1,8 +1,6 @@
 defmodule ExState.TestSupport.SaleWorkflow do
   use ExState.Definition
 
-  import Ecto.Query
-
   alias ExState.TestSupport.Repo
   alias ExState.TestSupport.Sale
 
@@ -47,20 +45,6 @@ defmodule ExState.TestSupport.SaleWorkflow do
       final
       on_entry :update_cancelled_at
     end
-  end
-
-  def participant(sale, :seller) do
-    sale
-    |> Ecto.assoc(:seller)
-    |> select([u], u.id)
-    |> Repo.one()
-  end
-
-  def participant(sale, :buyer) do
-    sale
-    |> Ecto.assoc(:buyer)
-    |> select([u], u.id)
-    |> Repo.one()
   end
 
   def use_step?(_sale, _step), do: true

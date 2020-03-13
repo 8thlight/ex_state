@@ -157,7 +157,6 @@ end
 - Multiple workflows per subject.
 - Allow configurable primary key / UUID type for usage across different
   databases.
-- Allow configurable user / participant entity type and association.
 - Tracking event history with metadata.
 - Define schema for serialization / json API usage / client consumption.
 - [Transient states](https://xstate.js.org/docs/guides/statenodes.html#transient-state-nodes)

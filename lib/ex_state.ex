@@ -1,14 +1,13 @@
 defmodule ExState do
   import Ecto.Query
 
-  alias Ecto.Multi
-  alias Ecto.Changeset
-  alias ExState.Ecto.Workflow
-  alias ExState.Ecto.WorkflowStep
-  alias ExState.Ecto.WorkflowParticipant
-  alias ExState.Ecto.Subject
   alias ExState.Execution
   alias ExState.Result
+  alias ExState.Ecto.Workflow
+  alias ExState.Ecto.WorkflowStep
+  alias ExState.Ecto.Subject
+  alias Ecto.Multi
+  alias Ecto.Changeset
 
   defp repo do
     :ex_state
@@ -55,7 +54,7 @@ defmodule ExState do
   defp get(subject) do
     subject
     |> Ecto.assoc(Subject.workflow_assoc_name(subject))
-    |> preload(participants: [], steps: :participant)
+    |> preload(:steps)
     |> repo().one()
   end
 
@@ -135,13 +134,11 @@ defmodule ExState do
       |> Execution.dump()
 
     Workflow.new(params)
-    |> Workflow.put_participants(params, &find_or_create_participant/1)
     |> Changeset.cast_assoc(:steps,
       required: true,
       with: fn step, params ->
         step
         |> WorkflowStep.changeset(params)
-        |> WorkflowStep.put_participant(params, &find_or_create_participant/1)
       end
     )
   end
@@ -154,14 +151,12 @@ defmodule ExState do
 
     workflow
     |> Workflow.changeset(params)
-    |> Workflow.put_participants(params, &find_or_create_participant/1)
     |> Changeset.cast_assoc(:steps,
       required: true,
       with: fn step, params ->
         step
         |> WorkflowStep.changeset(params)
-        |> WorkflowStep.put_participant(params, &find_or_create_participant/1)
-        |> WorkflowStep.put_completion(opts)
+        |> WorkflowStep.put_completion(Enum.into(opts, %{}))
       end
     )
   end
@@ -183,13 +178,5 @@ defmodule ExState do
       existing_step ->
         Map.put(step, :id, existing_step.id)
     end
-  end
-
-  defp find_or_create_participant(params) do
-    WorkflowParticipant.new(params)
-    |> repo().insert(
-      on_conflict: {:replace_all_except, [:id]},
-      conflict_target: [:name, :entity_id]
-    )
   end
 end

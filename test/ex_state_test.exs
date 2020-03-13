@@ -31,11 +31,6 @@ defmodule ExStateTest do
       assert sale.workflow.state == "pending"
 
       assert [
-               %{name: "buyer"},
-               %{name: "seller"}
-             ] = Enum.sort_by(sale.workflow.participants, & &1.name)
-
-      assert [
                %{state: "pending", name: "attach_document", complete?: false},
                %{state: "pending", name: "send", complete?: false},
                %{state: "receipt_acknowledged", name: "close", complete?: false},
@@ -124,7 +119,8 @@ defmodule ExStateTest do
 
       assert sale.workflow.steps
              |> Enum.find(fn s -> s.name == "attach_document" end)
-             |> Map.get(:completed_by_id) == user.id
+             |> Map.get(:completed_metadata)
+             |> Map.get(:user_id) == user.id
     end
   end
 end

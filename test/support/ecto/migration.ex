@@ -6,11 +6,7 @@ defmodule ExState.TestSupport.Migration do
       add(:name, :string, null: false)
     end
 
-    ExState.Ecto.Migration.up(
-      install_pgcrypto: true,
-      users: {:users, :bigint},
-      participants: {:users, :bigint}
-    )
+    ExState.Ecto.Migration.up(install_pgcrypto: true)
 
     create table(:sales) do
       add(:product_id, :string, null: false)
