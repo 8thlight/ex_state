@@ -111,6 +111,7 @@ defmodule ExState.Execution do
     |> put_actions(opts)
     |> enter_initial_state()
     |> handle_final()
+    |> handle_null()
     |> handle_no_steps()
   end
 
@@ -122,19 +123,23 @@ defmodule ExState.Execution do
     enter_state(execution, get_state(execution, initial_state), transition_actions: false)
   end
 
-  defp handle_no_steps(%__MODULE__{state: %State{steps: []}} = execution) do
-    transition_maybe(execution, :__no_steps__)
-  end
-
-  defp handle_no_steps(execution) do
-    execution
-  end
-
   defp handle_final(%__MODULE__{state: %State{type: :final}} = execution) do
     transition_maybe(execution, :__final__)
   end
 
   defp handle_final(execution) do
+    execution
+  end
+
+  defp handle_null(execution) do
+    transition_maybe(execution, :_)
+  end
+
+  defp handle_no_steps(%__MODULE__{state: %State{type: :atomic, steps: []}} = execution) do
+    transition_maybe(execution, :__no_steps__)
+  end
+
+  defp handle_no_steps(execution) do
     execution
   end
 
@@ -263,8 +268,7 @@ defmodule ExState.Execution do
       nil ->
         case Chart.parent(execution.chart, execution.state) do
           nil ->
-            {:error, :no_transition,
-             "no transition from #{execution.state.name} for event #{inspect(event)}", execution}
+            no_transition(execution, event)
 
           parent ->
             case do_transition(put_state(execution, parent), event) do
@@ -283,35 +287,51 @@ defmodule ExState.Execution do
 
         {:ok, next}
 
-      transition ->
-        case get_state(execution, transition.target) do
-          nil ->
-            {:error, :no_state, "no state found for transition to #{transition.target}",
-             execution}
+      %Transition{target: target} = transition when is_list(target) ->
+        Enum.reduce_while(target, no_transition(execution, event), fn target, e ->
+          case use_target(execution, transition, target) do
+            {:ok, next} -> {:halt, {:ok, next}}
+            {:error, _code, _reason, _execution} -> {:cont, e}
+          end
+        end)
 
-          target ->
-            case guard_transition(execution, target) do
-              :ok ->
-                next =
-                  execution
-                  |> put_transition(transition)
-                  |> enter_state(target)
+      %Transition{target: target} = transition ->
+        use_target(execution, transition, target)
+    end
+  end
 
-                {:ok, next}
+  defp no_transition(execution, event) do
+    {:error, :no_transition,
+     "no transition from #{execution.state.name} for event #{inspect(event)}", execution}
+  end
 
-              {:error, reason} ->
-                {:error, :guard_transition, reason, execution}
-            end
+  defp use_target(execution, transition, target) do
+    case get_state(execution, target) do
+      nil ->
+        {:error, :no_state, "no state found for transition to #{target}", execution}
+
+      state ->
+        case guard_transition(execution, state) do
+          :ok ->
+            next =
+              execution
+              |> put_transition(transition)
+              |> enter_state(state)
+
+            {:ok, next}
+
+          {:error, reason} ->
+            {:error, :guard_transition, reason, execution}
         end
     end
   end
 
-  defp guard_transition(execution, target) do
+  defp guard_transition(execution, state) do
     if function_exported?(execution.callback_mod, :guard_transition, 3) do
       execution.callback_mod.guard_transition(
         execution.subject,
         State.id(execution.state),
-        State.id(target)
+        State.id(state)
       )
     else
       :ok

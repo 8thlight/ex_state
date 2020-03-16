@@ -789,12 +789,16 @@ defmodule ExState.DefinitionTest do
     use ExState.Definition
 
     workflow "final_states" do
-      subject :message, Message
+      subject :note
 
       initial_state :composing
 
       state :composing do
-        initial_state :thinking
+        initial_state :planning
+
+        state :planning do
+          on :_, [:thinking, :writing]
+        end
 
         state :thinking do
           on :idea, :writing
@@ -819,12 +823,28 @@ defmodule ExState.DefinitionTest do
         final
       end
     end
+
+    def guard_transition(%{think: false}, :planning, :thinking) do
+      {:error, "no"}
+    end
+
+    def guard_transition(%{think: true}, :planning, :thinking) do
+      :ok
+    end
+
+    def guard_transition(_, _, _), do: :ok
+  end
+
+  test "handles null event" do
+    assert %{state: %{name: "sending"}} =
+             FinalStateWorkflow.new(%{think: false})
+             |> FinalStateWorkflow.transition!(:words)
   end
 
   test "handles final states" do
     assert %{state: %{name: "sending"}} =
              execution =
-             FinalStateWorkflow.new()
+             FinalStateWorkflow.new(%{think: true})
              |> FinalStateWorkflow.transition!(:idea)
              |> FinalStateWorkflow.transition!(:words)
 

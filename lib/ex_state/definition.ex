@@ -42,6 +42,57 @@ defmodule ExState.Definition do
 
     state :cancelled
 
+  Transitions may be a list of targets, in which case the first target state
+  which is allowed by `guard_transition/3` will be used.
+
+    state :pending do
+      initial_state :preparing
+
+      state :preparing do
+        on :prepared, [:reviewing, :sending]
+      end
+
+      state :reviewing do
+        on :cancel, :cancelled
+      end
+
+      state :sending do
+        on :send, :sent
+      end
+    end
+
+    def guard_transition(shipment, :preparing, :reviewing) do
+      if shipment.requires_review? do
+        :ok
+      else
+        {:error, "no review required"}
+      end
+    end
+
+    def guard_transition(shipment, :preparing, :sending) do
+      if shipment.requires_review? do
+        {:error, "review required"}
+      else
+        :ok
+      end
+    end
+
+    def guard_transition(_, _, ), do: :ok
+
+  Transitions may also use the null event, which occurs immediately on entering
+  a state. This is useful determining the initial state dynamically.
+
+    state :unknown do
+      on :_, [:a, :b]
+    end
+
+    state :a
+    state :b
+
+    def guard_transition(order, :unknown, :a), do
+      if order.use_a?, do: :ok, else: {:error, :use_b}
+    end
+
   ## Steps
 
   Steps must be completed in order of definition:

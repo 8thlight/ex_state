@@ -12,6 +12,10 @@ defmodule ExState.TestSupport.SaleWorkflow do
 
     initial_state :pending
 
+    state :unknown do
+      on :_, [:morning]
+    end
+
     state :pending do
       step :attach_document, participant: :seller
       step :send, participant: :seller

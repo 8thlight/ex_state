@@ -170,6 +170,7 @@ defmodule ExState.Definition.State do
   def id(state), do: state.name |> last() |> String.to_atom()
 
   def resolve(nil, next) when is_atom(next), do: next
+  def resolve(current, next) when is_list(next), do: Enum.map(next, &resolve(current, &1))
   def resolve(current, :_), do: current
 
   def resolve(current, {:<, next}) when is_atom(next) do
