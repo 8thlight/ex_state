@@ -13,16 +13,16 @@ defmodule ExState.Definition.Chart do
 
   defstruct name: nil, subject: nil, initial_state: nil, states: %{}, participants: []
 
-  def events(chart) do
+  def transitions(chart) do
     chart.states
     |> Map.values()
-    |> Enum.flat_map(&State.events/1)
+    |> Enum.flat_map(&State.transitions/1)
   end
 
-  def event_names(chart) do
+  def events(chart) do
     chart
-    |> events()
-    |> Enum.map(fn event -> Atom.to_string(event.name) end)
+    |> transitions()
+    |> Enum.map(fn transition -> Atom.to_string(transition.event) end)
     |> Enum.uniq()
   end
 
@@ -80,7 +80,7 @@ defmodule ExState.Definition.Chart do
     %{
       "states" => state_names(chart),
       "steps" => step_names(chart),
-      "events" => event_names(chart),
+      "events" => events(chart),
       "participants" => participant_names(chart)
     }
   end

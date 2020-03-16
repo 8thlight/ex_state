@@ -7,14 +7,14 @@ defmodule ExState.Execution do
   alias ExState.Definition.Chart
   alias ExState.Definition.State
   alias ExState.Definition.Step
-  alias ExState.Definition.Event
+  alias ExState.Definition.Transition
 
   @type t :: %__MODULE__{
           chart: Chart.t(),
           state: State.t(),
           actions: [atom()],
           history: [State.t()],
-          transitions: [Event.t()],
+          transitions: [Transition.t()],
           callback_mod: module(),
           subject: any(),
           meta: map()
@@ -229,7 +229,7 @@ defmodule ExState.Execution do
   @doc """
   Transitions execution with the event and returns a result tuple.
   """
-  @spec transition(t(), Event.name()) :: {:ok, t()} | {:error, String.t(), t()}
+  @spec transition(t(), Transition.event()) :: {:ok, t()} | {:error, String.t(), t()}
   def transition(execution, event) do
     case do_transition(execution, event) do
       {:ok, execution} ->
@@ -257,7 +257,7 @@ defmodule ExState.Execution do
     end
   end
 
-  @spec do_transition(t(), Event.name()) :: {:ok, t()} | {:error, atom(), any(), t()}
+  @spec do_transition(t(), Transition.event()) :: {:ok, t()} | {:error, atom(), any(), t()}
   defp do_transition(%__MODULE__{state: %State{name: current_state}} = execution, event) do
     case State.transition(execution.state, event) do
       nil ->
@@ -276,7 +276,7 @@ defmodule ExState.Execution do
             end
         end
 
-      %Event{next_state: ^current_state, reset: false} = transition ->
+      %Transition{target: ^current_state, reset: false} = transition ->
         next =
           execution
           |> add_actions(transition.actions)
@@ -284,18 +284,18 @@ defmodule ExState.Execution do
         {:ok, next}
 
       transition ->
-        case get_state(execution, transition.next_state) do
+        case get_state(execution, transition.target) do
           nil ->
-            {:error, :no_state, "no state found for transition to #{transition.next_state}",
+            {:error, :no_state, "no state found for transition to #{transition.target}",
              execution}
 
-          next_state ->
-            case guard_transition(execution, next_state) do
+          target ->
+            case guard_transition(execution, target) do
               :ok ->
                 next =
                   execution
                   |> put_transition(transition)
-                  |> enter_state(next_state)
+                  |> enter_state(target)
 
                 {:ok, next}
 
@@ -306,12 +306,12 @@ defmodule ExState.Execution do
     end
   end
 
-  defp guard_transition(execution, next_state) do
+  defp guard_transition(execution, target) do
     if function_exported?(execution.callback_mod, :guard_transition, 3) do
       execution.callback_mod.guard_transition(
         execution.subject,
         State.id(execution.state),
-        State.id(next_state)
+        State.id(target)
       )
     else
       :ok

@@ -120,13 +120,13 @@ defmodule ExState.Definition.CompilerTest do
                    name: "working",
                    steps: [],
                    transitions: %{
-                     close: %ExState.Definition.Event{
-                       name: :close,
-                       next_state: "closed"
+                     close: %ExState.Definition.Transition{
+                       event: :close,
+                       target: "closed"
                      },
-                     reject: %ExState.Definition.Event{
-                       name: :reject,
-                       next_state: "rejected"
+                     reject: %ExState.Definition.Transition{
+                       event: :reject,
+                       target: "rejected"
                      }
                    }
                  },
@@ -158,9 +158,9 @@ defmodule ExState.Definition.CompilerTest do
                      }
                    ],
                    transitions: %{
-                     {:completed, :countersign} => %ExState.Definition.Event{
-                       name: {:completed, :countersign},
-                       next_state: "working.execution.funding"
+                     {:completed, :countersign} => %ExState.Definition.Transition{
+                       event: {:completed, :countersign},
+                       target: "working.execution.funding"
                      }
                    }
                  },
@@ -199,13 +199,13 @@ defmodule ExState.Definition.CompilerTest do
                      }
                    ],
                    transitions: %{
-                     {:decision, :evaluate, :bad} => %ExState.Definition.Event{
-                       name: {:decision, :evaluate, :bad},
-                       next_state: "working.funding.rejected"
+                     {:decision, :evaluate, :bad} => %ExState.Definition.Transition{
+                       event: {:decision, :evaluate, :bad},
+                       target: "working.funding.rejected"
                      },
-                     {:decision, :evaluate, :good} => %ExState.Definition.Event{
-                       name: {:decision, :evaluate, :good},
-                       next_state: "working.funding.closed"
+                     {:decision, :evaluate, :good} => %ExState.Definition.Transition{
+                       event: {:decision, :evaluate, :good},
+                       target: "working.funding.closed"
                      }
                    }
                  },
@@ -230,9 +230,9 @@ defmodule ExState.Definition.CompilerTest do
                      }
                    ],
                    transitions: %{
-                     {:completed, :accept} => %ExState.Definition.Event{
-                       name: {:completed, :accept},
-                       next_state: "working.subscription.confirming"
+                     {:completed, :accept} => %ExState.Definition.Transition{
+                       event: {:completed, :accept},
+                       target: "working.subscription.confirming"
                      }
                    }
                  },
@@ -251,9 +251,9 @@ defmodule ExState.Definition.CompilerTest do
                    ],
                    repeatable_steps: ["accept"],
                    transitions: %{
-                     {:completed, :confirming} => %ExState.Definition.Event{
-                       name: {:completed, :confirming},
-                       next_state: "working.subscription.submitting"
+                     {:completed, :confirming} => %ExState.Definition.Transition{
+                       event: {:completed, :confirming},
+                       target: "working.subscription.submitting"
                      }
                    }
                  },
@@ -278,9 +278,9 @@ defmodule ExState.Definition.CompilerTest do
                      }
                    ],
                    transitions: %{
-                     {:completed, :sign} => %ExState.Definition.Event{
-                       name: {:completed, :sign},
-                       next_state: "working.execution"
+                     {:completed, :sign} => %ExState.Definition.Transition{
+                       event: {:completed, :sign},
+                       target: "working.execution"
                      }
                    }
                  }

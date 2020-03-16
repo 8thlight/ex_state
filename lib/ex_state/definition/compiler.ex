@@ -3,7 +3,7 @@ defmodule ExState.Definition.Compiler do
     Chart,
     State,
     Step,
-    Event
+    Transition
   }
 
   defmodule Env do
@@ -170,55 +170,55 @@ defmodule ExState.Definition.Compiler do
     [State.add_action(state, :exit, action) | rest]
   end
 
-  defp compile_state(env, current, states, {:on_completed, _, [step, next_state]}) do
-    compile_state(env, current, states, {:on, [], [{:completed, step}, next_state]})
+  defp compile_state(env, current, states, {:on_completed, _, [step, target]}) do
+    compile_state(env, current, states, {:on, [], [{:completed, step}, target]})
   end
 
-  defp compile_state(env, current, states, {:on_completed, _, [step, next_state, options]}) do
-    compile_state(env, current, states, {:on, [], [{:completed, step}, next_state, options]})
+  defp compile_state(env, current, states, {:on_completed, _, [step, target, options]}) do
+    compile_state(env, current, states, {:on, [], [{:completed, step}, target, options]})
   end
 
-  defp compile_state(env, current, states, {:on_decision, _, [step, decision, next_state]}) do
-    compile_state(env, current, states, {:on, [], [{:decision, step, decision}, next_state]})
+  defp compile_state(env, current, states, {:on_decision, _, [step, decision, target]}) do
+    compile_state(env, current, states, {:on, [], [{:decision, step, decision}, target]})
   end
 
   defp compile_state(
          env,
          current,
          states,
-         {:on_decision, _, [step, decision, next_state, options]}
+         {:on_decision, _, [step, decision, target, options]}
        ) do
     compile_state(
       env,
       current,
       states,
-      {:on, [], [{:decision, step, decision}, next_state, options]}
+      {:on, [], [{:decision, step, decision}, target, options]}
     )
   end
 
-  defp compile_state(env, current, states, {:on_no_steps, _, [next_state]}) do
-    compile_state(env, current, states, {:on_no_steps, [], [next_state, []]})
+  defp compile_state(env, current, states, {:on_no_steps, _, [target]}) do
+    compile_state(env, current, states, {:on_no_steps, [], [target, []]})
   end
 
-  defp compile_state(env, current, states, {:on_no_steps, _, [next_state, options]}) do
-    compile_state(env, current, states, {:on, [], [:__no_steps__, next_state, options]})
+  defp compile_state(env, current, states, {:on_no_steps, _, [target, options]}) do
+    compile_state(env, current, states, {:on, [], [:__no_steps__, target, options]})
   end
 
-  defp compile_state(env, current, states, {:on_final, _, [next_state]}) do
-    compile_state(env, current, states, {:on_final, [], [next_state, []]})
+  defp compile_state(env, current, states, {:on_final, _, [target]}) do
+    compile_state(env, current, states, {:on_final, [], [target, []]})
   end
 
-  defp compile_state(env, current, states, {:on_final, _, [next_state, options]}) do
-    compile_state(env, current, states, {:on, [], [:__final__, next_state, options]})
+  defp compile_state(env, current, states, {:on_final, _, [target, options]}) do
+    compile_state(env, current, states, {:on, [], [:__final__, target, options]})
   end
 
-  defp compile_state(env, current, states, {:on, _, [id, next_state]}) do
-    compile_state(env, current, states, {:on, [], [id, next_state, []]})
+  defp compile_state(env, current, states, {:on, _, [id, target]}) do
+    compile_state(env, current, states, {:on, [], [id, target, []]})
   end
 
-  defp compile_state(_env, current, [state | rest], {:on, _, [id, next_state, opts]}) do
-    event = Event.new(id, State.resolve(current, next_state), opts)
-    [State.add_transition(state, event) | rest]
+  defp compile_state(_env, current, [state | rest], {:on, _, [event, target, opts]}) do
+    transition = Transition.new(event, State.resolve(current, target), opts)
+    [State.add_transition(state, transition) | rest]
   end
 
   defp compile_state(_env, _current, states, _) when is_list(states) do

@@ -1,23 +1,23 @@
-defmodule ExState.Definition.Event do
-  @type name :: atom() | {:completed, atom()} | {:decision, atom(), atom()}
+defmodule ExState.Definition.Transition do
+  @type event :: atom() | {:completed, atom()} | {:decision, atom(), atom()}
 
   @type t :: %__MODULE__{
-          name: name(),
+          event: event(),
           reset: boolean(),
-          next_state: String.t(),
+          target: String.t() | [String.t()],
           actions: [atom()]
         }
 
-  defstruct name: nil, reset: true, next_state: nil, actions: []
+  defstruct event: nil, reset: true, target: nil, actions: []
 
-  def new(name, next_state, opts \\ []) do
+  def new(event, target, opts \\ []) do
     reset = Keyword.get(opts, :reset, true)
     action = Keyword.get(opts, :action, nil)
     actions = if action, do: [action], else: Keyword.get(opts, :actions, [])
 
     %__MODULE__{
-      name: name,
-      next_state: next_state,
+      event: event,
+      target: target,
       actions: actions,
       reset: reset
     }

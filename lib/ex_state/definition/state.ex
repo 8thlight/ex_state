@@ -1,6 +1,6 @@
 defmodule ExState.Definition.State do
   alias ExState.Definition.Step
-  alias ExState.Definition.Event
+  alias ExState.Definition.Transition
 
   @type state_type :: :atomic | :compound | :final
 
@@ -11,7 +11,8 @@ defmodule ExState.Definition.State do
           steps: [Step.t()],
           ignored_steps: [Step.t()],
           repeatable_steps: [String.t()],
-          transitions: %{required(Event.name()) => Event.t()}
+          transitions: %{required(Transition.event()) => Transition.t()},
+          actions: %{required(Transition.event()) => atom()}
         }
 
   defstruct name: nil,
@@ -27,14 +28,14 @@ defmodule ExState.Definition.State do
     Map.get(state.transitions, event)
   end
 
-  def events(state) do
+  def transitions(state) do
     state.transitions
     |> Map.values()
     |> Enum.reduce([], fn transition, events ->
-      case transition.name do
+      case transition.event do
         {:completed, _step} -> events
         {:decision, _step, _decision} -> events
-        event_name when is_atom(event_name) -> [%{name: event_name, state: state.name} | events]
+        event_name when is_atom(event_name) -> [%{event: event_name, state: state.name} | events]
       end
     end)
   end
@@ -43,8 +44,8 @@ defmodule ExState.Definition.State do
     Map.get(state.actions, event, [])
   end
 
-  def add_transition(state, event) do
-    %__MODULE__{state | transitions: Map.put(state.transitions, event.name, event)}
+  def add_transition(state, transition) do
+    %__MODULE__{state | transitions: Map.put(state.transitions, transition.event, transition)}
   end
 
   def add_action(state, event, action) do
