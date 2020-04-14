@@ -152,6 +152,13 @@ def acknowledge_receipt(id, user_id: user_id) do
 end
 ```
 
+### Running Tests
+Setup test database
+```bash
+MIX_ENV=test mix ecto.create
+mix test
+```
+
 ## TODO
 
 - Multiple workflows per subject.
