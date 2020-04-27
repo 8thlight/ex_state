@@ -484,7 +484,7 @@ defmodule ExState.Execution do
         {:ok, result} ->
           {:ok, execution, result}
 
-        {:update, subject} ->
+        {:updated, subject} ->
           {:ok, %__MODULE__{execution | subject: subject}, subject}
 
         e ->

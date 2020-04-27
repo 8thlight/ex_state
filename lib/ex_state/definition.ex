@@ -258,10 +258,10 @@ defmodule ExState.Definition do
     end
 
     def update_done_at(subject) do
-      {:update, %{subject | done_at: now()}}
+      {:updated, %{subject | done_at: now()}}
     end
 
-  Actions can return a `{:update, subject}` tuple to add the updated
+  Actions can return a `{:updated, subject}` tuple to add the updated
   subject to the execution state. A default `Execution.execute_actions/1`
   function is provided which executes triggered actions in a fire-and-forget
   fashion. See `ExState.execute_actions/1` for an example of transactionally
@@ -330,6 +330,6 @@ defmodule ExState.Definition do
     end
   end
 
-  def update({:ok, subject}), do: {:update, subject}
+  def update({:ok, subject}), do: {:updated, subject}
   def update(x), do: x
 end
