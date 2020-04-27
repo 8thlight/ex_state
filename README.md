@@ -1,6 +1,6 @@
 # ExState
 
-Elixir statecharts and workflows for Ecto models.
+Elixir state machines, statecharts, and workflows for Ecto models.
 
 ## Installation
 

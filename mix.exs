@@ -9,6 +9,13 @@ defmodule ExState.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      description: description(),
+      package: package(),
+      source_url: "https://github.com/8thlight/ex_state",
+      docs: [
+        main: "ExState",
+        extras: ["README.md"]
+      ],
       dialyzer: [
         plt_add_deps: :app_tree,
         plt_add_apps: [:mix],
@@ -33,6 +40,18 @@ defmodule ExState.MixProject do
       {:jason, "~> 1.0"},
       {:gettext, "~> 0.11"},
       {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false}
+    ]
+  end
+
+  defp description() do
+    "State machines, statecharts and workflows for Ecto models."
+  end
+
+  defp package() do
+    [
+      files: ~w(lib .formatter.exs mix.exs README* LICENSE*),
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/8thlight/ex_state"}
     ]
   end
 end
