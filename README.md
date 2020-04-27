@@ -1,5 +1,8 @@
 # ExState
 
+[![Hex.pm](https://img.shields.io/hexpm/v/ex_state_ecto.svg)](https://hex.pm/packages/ex_state_ecto)
+[![Hex Docs](https://img.shields.io/badge/hexdocs-release-blue.svg)](https://hexdocs.pm/ex_state_ecto/ExState.html)
+
 Elixir state machines, statecharts, and workflows for Ecto models.
 
 ## Installation
