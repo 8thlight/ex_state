@@ -15,31 +15,31 @@ defmodule ExState.Ecto.Query do
 
   Examples:
 
-    investment #=> %Investment{workflow: %Workflow{state: "subscribing.confirming_options"}}
+      investment #=> %Investment{workflow: %Workflow{state: "subscribing.confirming_options"}}
 
-    Investment
-    |> where_state("subscribing.confirming_options")
-    |> Repo.all()                                                 #=> [investment]
+      Investment
+      |> where_state("subscribing.confirming_options")
+      |> Repo.all()                                                 #=> [investment]
 
-    Investment
-    |> where_state([:subscribing, :confirming_options])
-    |> Repo.all()                                                 #=> [investment]
+      Investment
+      |> where_state([:subscribing, :confirming_options])
+      |> Repo.all()                                                 #=> [investment]
 
-    Investment
-    |> where_state(["subscribing", "confirming_options"])
-    |> Repo.all()                                                 #=> [investment]
+      Investment
+      |> where_state(["subscribing", "confirming_options"])
+      |> Repo.all()                                                 #=> [investment]
 
-    Investment
-    |> where_state(:subscribing)
-    |> Repo.all()                                                 #=> []
+      Investment
+      |> where_state(:subscribing)
+      |> Repo.all()                                                 #=> []
 
-    Investment
-    |> where_state(not: [:subscribing, :confirming_suitability])
-    |> Repo.all()                                                 #=> [investment]
+      Investment
+      |> where_state(not: [:subscribing, :confirming_suitability])
+      |> Repo.all()                                                 #=> [investment]
 
-    Investment
-    |> where_state(not: [:subscribing, :confirming_options])
-    |> Repo.all()                                                 #=> []
+      Investment
+      |> where_state(not: [:subscribing, :confirming_options])
+      |> Repo.all()                                                 #=> []
   """
   def where_state(subject_query, not: state) do
     subject_query
@@ -62,31 +62,31 @@ defmodule ExState.Ecto.Query do
 
   Examples:
 
-    investment1 #=> %Investment{workflow: %Workflow{state: "subscribing.confirming_options"}}
-    investment2 #=> %Investment{workflow: %Workflow{state: "executed"}}
+      investment1 #=> %Investment{workflow: %Workflow{state: "subscribing.confirming_options"}}
+      investment2 #=> %Investment{workflow: %Workflow{state: "executed"}}
 
-    Investment
-    |> where_state_in([
-      [:subscribing, :confirming_options],
-      :executed
-    ])
-    |> Repo.all()                                                 #=> [investment1, investment2]
+      Investment
+      |> where_state_in([
+        [:subscribing, :confirming_options],
+        :executed
+      ])
+      |> Repo.all()                                                 #=> [investment1, investment2]
 
-    Investment
-    |> where_state_in(["subscribing.confirming_options"])
-    |> Repo.all()                                                 #=> [investment1]
+      Investment
+      |> where_state_in(["subscribing.confirming_options"])
+      |> Repo.all()                                                 #=> [investment1]
 
-    Investment
-    |> where_state_in([:subscribing])
-    |> Repo.all()                                                 #=> []
+      Investment
+      |> where_state_in([:subscribing])
+      |> Repo.all()                                                 #=> []
 
-    Investment
-    |> where_state_in(not: [[:subscribing, :confirming_options]])
-    |> Repo.all()                                                 #=> [investment2]
+      Investment
+      |> where_state_in(not: [[:subscribing, :confirming_options]])
+      |> Repo.all()                                                 #=> [investment2]
 
-    Investment
-    |> where_state_in(not: [:subscribing])
-    |> Repo.all()                                                 #=> [investment1, investment2]
+      Investment
+      |> where_state_in(not: [:subscribing])
+      |> Repo.all()                                                 #=> [investment1, investment2]
   """
   def where_state_in(subject_query, not: states) do
     subject_query
@@ -107,23 +107,23 @@ defmodule ExState.Ecto.Query do
 
   Examples:
 
-    investment #=> %Investment{workflow: %Workflow{state: "subscribing.confirming_options"}}
+      investment #=> %Investment{workflow: %Workflow{state: "subscribing.confirming_options"}}
 
-    Investment
-    |> where_any_state(:subscribing)
-    |> Repo.all()                                                 #=> [investment]
+      Investment
+      |> where_any_state(:subscribing)
+      |> Repo.all()                                                 #=> [investment]
 
-    Investment
-    |> where_any_state("subscribing")
-    |> Repo.all()                                                 #=> [investment]
+      Investment
+      |> where_any_state("subscribing")
+      |> Repo.all()                                                 #=> [investment]
 
-    Investment
-    |> where_any_state([:subscribing, :confirming_options])
-    |> Repo.all()                                                 #=> [investment]
+      Investment
+      |> where_any_state([:subscribing, :confirming_options])
+      |> Repo.all()                                                 #=> [investment]
 
-    Investment
-    |> where_any_state(:resubmitting)
-    |> Repo.all()                                                 #=> []
+      Investment
+      |> where_any_state(:resubmitting)
+      |> Repo.all()                                                 #=> []
   """
   def where_any_state(subject_query, state) do
     state_id = to_state_id(state)

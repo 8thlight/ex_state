@@ -7,86 +7,86 @@ defmodule ExState do
 
   ## Subject Setup
 
-    defmodule ShipmentWorkflow do
-      use ExState.Definition
+      defmodule ShipmentWorkflow do
+        use ExState.Definition
 
-      workflow "shipment" do
-        initial_state :preparing
+        workflow "shipment" do
+          initial_state :preparing
 
-        state :preparing do
-          state :packing do
-            on :packed, :sealing
+          state :preparing do
+            state :packing do
+              on :packed, :sealing
+            end
+
+            state :sealing do
+              on :unpack, :packing
+              on :sealed, :sealed
+            end
+
+            state :sealed do
+              final
+            end
+
+            on_final :shipping
           end
 
-          state :sealing do
-            on :unpack, :packing
-            on :sealed, :sealed
+          state :shipping do
+            on :shipped, :in_transit
           end
 
-          state :sealed do
+          state :in_transit do
+            on :arrival, :arrived
+          end
+
+          state :arrived od
+            on :accepted, :complete
+            on :return, :returning
+          end
+
+          state :returning do
+            on :arrival, :returned
+          end
+
+          state :returned do
+            on :replace, :preparing
+          end
+
+          state :complete do
             final
           end
-
-          on_final :shipping
-        end
-
-        state :shipping do
-          on :shipped, :in_transit
-        end
-
-        state :in_transit do
-          on :arrival, :arrived
-        end
-
-        state :arrived od
-          on :accepted, :complete
-          on :return, :returning
-        end
-
-        state :returning do
-          on :arrival, :returned
-        end
-
-        state :returned do
-          on :replace, :preparing
-        end
-
-        state :complete do
-          final
         end
       end
-    end
 
-    defmodule Shipment do
-      use Ecto.Schema
-      use ExState.Ecto.Subject
+      defmodule Shipment do
+        use Ecto.Schema
+        use ExState.Ecto.Subject
 
-      schema "shipments" do
-        has_workflow ShipmentWorkflow
+        schema "shipments" do
+          has_workflow ShipmentWorkflow
+        end
       end
-    end
 
   ## Creating
 
-    sale = %Sale{id: 1}
+      sale = %Sale{id: 1}
 
-    execution = ExState.create(sale) #=> %ExState.Execution{}
+      execution = ExState.create(sale) #=> %ExState.Execution{}
 
   ## Updating
 
-    sale = %Sale{id: 1}
+      sale = %Sale{id: 1}
 
-    {:ok, sale} =
-      sale
-      |> ExState.load()
-      |> ExState.Execution.transition!(:packed)
-      |> ExState.Execution.transition!(:sealed)
-      |> ExState.persist()
+      {:ok, sale} =
+        sale
+        |> ExState.load()
+        |> ExState.Execution.transition!(:packed)
+        |> ExState.Execution.transition!(:sealed)
+        |> ExState.persist()
 
-    sale.workflow.state #=> "shipping"
+      sale.workflow.state #=> "shipping"
 
-    {:error, reason} = ExState.transition(sale, :return)
-    reason #=> "no transition from state shipping for event :return"
+      {:error, reason} = ExState.transition(sale, :return)
+      reason #=> "no transition from state shipping for event :return"
   """
 
   import Ecto.Query

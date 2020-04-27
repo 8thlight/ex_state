@@ -161,6 +161,7 @@ mix test
 
 ## TODO
 
+- Extract `ex_state_core`, and other backend / db packages.
 - Multiple workflows per subject.
 - Allow configurable primary key / UUID type for usage across different
   databases.
