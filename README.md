@@ -104,8 +104,6 @@ defmodule Sale do
 
   import Ecto.Changeset
 
-  alias ExState.TestSupport.User
-
   schema "sales" do
     has_workflow SaleWorkflow
     field :product_id, :string
@@ -119,14 +117,14 @@ end
 ```elixir
 sale
 |> ExState.create()
-|> ExState.Execution.transition(:send)
+|> ExState.Execution.transition_maybe(:send)
 |> ExState.persist()
 ```
 
 ```elixir
 sale
 |> ExState.load()
-|> ExState.Execution.transition(:cancelled)
+|> ExState.Execution.transition_maybe(:cancelled)
 |> ExState.persist()
 ```
 
@@ -156,7 +154,9 @@ end
 ```
 
 ### Running Tests
+
 Setup test database
+
 ```bash
 MIX_ENV=test mix ecto.create
 mix test
@@ -169,6 +169,7 @@ mix test
 - Allow configurable primary key / UUID type for usage across different
   databases.
 - Tracking event history with metadata.
+- Add SCXML support
 - Define schema for serialization / json API usage / client consumption.
 - [Parallel states](https://xstate.js.org/docs/guides/parallel.html#parallel-state-nodes)
 - [History states](https://xstate.js.org/docs/guides/history.html#history-state-configuration)
