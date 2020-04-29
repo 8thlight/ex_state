@@ -93,8 +93,8 @@ defmodule SaleWorkflow do
     end
   end
 
-  def guard_transition(:pending, :sent, %{sale: %{ready: false}}) do
-    {:error, "not ready"}
+  def guard_transition(:pending, :sent, %{sale: %{address: nil}}) do
+    {:error, "missing address"}
   end
 
   def guard_transition(_from, _to, _context), do: :ok
@@ -122,21 +122,9 @@ defmodule Sale do
 end
 ```
 
-### Changing States
+### Transitioning States
 
-```elixir
-sale
-|> ExState.create()
-|> ExState.Execution.transition_maybe(:send)
-|> ExState.persist()
-```
-
-```elixir
-sale
-|> ExState.load()
-|> ExState.Execution.transition_maybe(:cancelled)
-|> ExState.persist()
-```
+Using `ExState.transition/3`:
 
 ```elixir
 def create_sale(params) do
@@ -151,6 +139,35 @@ def cancel_sale(id, user_id: user_id) do
 
   ExState.transition(sale, :cancel, user_id: user_id)
 end
+```
+
+Using `ExState.Execution.transition_maybe/2`:
+
+```elixir
+sale
+|> ExState.create()
+|> ExState.Execution.transition_maybe(:send)
+|> ExState.persist()
+```
+
+Using `ExState.Execution.transition/2`:
+
+```elixir
+{:ok, execution} =
+  sale
+  |> ExState.load()
+  |> ExState.Execution.transition(:cancelled)
+
+ExState.persist(execution)
+```
+
+Using `ExState.Execution.transition!/2`:
+
+```elixir
+sale
+|> ExState.load()
+|> ExState.Execution.transition!(:cancelled)
+|> ExState.persist()
 ```
 
 ### Completing Steps
