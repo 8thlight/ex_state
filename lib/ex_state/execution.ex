@@ -16,7 +16,7 @@ defmodule ExState.Execution do
           history: [State.t()],
           transitions: [Transition.t()],
           callback_mod: module(),
-          subject: any(),
+          context: map(),
           meta: map()
         }
 
@@ -26,35 +26,73 @@ defmodule ExState.Execution do
             history: [],
             transitions: [],
             callback_mod: nil,
-            subject: nil,
+            context: %{},
             meta: %{}
 
   @doc """
   Creates a new workflow execution from the initial state.
   """
-  @spec new(module(), struct()) :: t()
-  def new(workflow, subject) do
-    new(workflow.definition, workflow, subject)
+  @spec new(module()) :: t()
+  def new(workflow) do
+    new(workflow.definition, workflow, %{})
   end
 
-  @spec new(Chart.t(), module(), struct()) :: t()
-  def new(chart, callback_mod, subject) do
-    %__MODULE__{chart: chart, callback_mod: callback_mod, subject: subject}
+  @spec new(module(), map()) :: t()
+  def new(workflow, context) do
+    new(workflow.definition, workflow, context)
+  end
+
+  @spec new(Chart.t(), module(), map()) :: t()
+  def new(chart, callback_mod, context) do
+    %__MODULE__{chart: chart, callback_mod: callback_mod, context: context}
     |> enter_state(chart.initial_state)
   end
 
   @doc """
   Continues a workflow execution from the specified state.
   """
-  @spec continue(module(), struct(), String.t()) :: t()
-  def continue(workflow, subject, state_name) do
-    continue(workflow.definition, workflow, subject, state_name)
+  @spec continue(module(), String.t()) :: t()
+  def continue(workflow, state_name) do
+    continue(workflow.definition, workflow, state_name, %{})
   end
 
-  @spec continue(Chart.t(), module(), struct(), String.t()) :: t()
-  def continue(chart, callback_mod, subject, state_name) when is_bitstring(state_name) do
-    %__MODULE__{chart: chart, callback_mod: callback_mod, subject: subject}
+  @spec continue(module(), String.t(), map()) :: t()
+  def continue(workflow, state_name, context) do
+    continue(workflow.definition, workflow, state_name, context)
+  end
+
+  @spec continue(Chart.t(), module(), String.t(), map()) :: t()
+  def continue(chart, callback_mod, state_name, context) when is_bitstring(state_name) do
+    %__MODULE__{chart: chart, callback_mod: callback_mod, context: context}
     |> enter_state(state_name, entry_actions: false)
+  end
+
+  def put_subject(execution, subject) do
+    case execution.chart.subject do
+      {name, _queryable} ->
+        put_context(execution, name, subject)
+
+      nil ->
+        raise "No subject defined in chart"
+    end
+  end
+
+  def get_subject(execution) do
+    case execution.chart.subject do
+      {name, _queryable} ->
+        Map.get(execution.context, name)
+
+      nil ->
+        nil
+    end
+  end
+
+  def put_context(execution, context) do
+    %{execution | context: context}
+  end
+
+  def put_context(execution, key, value) do
+    %{execution | context: Map.put(execution.context, key, value)}
   end
 
   @doc """
@@ -329,9 +367,9 @@ defmodule ExState.Execution do
   defp guard_transition(execution, state) do
     if function_exported?(execution.callback_mod, :guard_transition, 3) do
       execution.callback_mod.guard_transition(
-        execution.subject,
         State.id(execution.state),
-        State.id(state)
+        State.id(state),
+        execution.context
       )
     else
       :ok
@@ -354,16 +392,8 @@ defmodule ExState.Execution do
       complete?: complete?(execution),
       steps: dump_steps(execution),
       participants: dump_participants(execution),
-      subject: dump_subject(execution)
+      context: execution.context
     }
-  end
-
-  defp dump_subject(execution) do
-    case execution.chart.subject do
-      nil -> nil
-      {key, _} -> {key, execution.subject}
-      key -> key
-    end
   end
 
   defp dump_participants(execution) do
@@ -411,7 +441,7 @@ defmodule ExState.Execution do
 
   defp use_step?(execution, step) do
     if function_exported?(execution.callback_mod, :use_step?, 2) do
-      execution.callback_mod.use_step?(execution.subject, Step.id(step))
+      execution.callback_mod.use_step?(Step.id(step), execution.context)
     else
       true
     end
@@ -477,15 +507,19 @@ defmodule ExState.Execution do
   @spec execute_action(t(), atom()) :: {:ok, t(), any()} | {:error, any()}
   def execute_action(execution, action) do
     if function_exported?(execution.callback_mod, action, 1) do
-      case apply(execution.callback_mod, action, [execution.subject]) do
+      case apply(execution.callback_mod, action, [execution.context]) do
         :ok ->
           {:ok, execution, nil}
 
         {:ok, result} ->
           {:ok, execution, result}
 
-        {:updated, subject} ->
-          {:ok, %__MODULE__{execution | subject: subject}, subject}
+        {:updated, {key, value}} ->
+          context = Map.put(execution.context, key, value)
+          {:ok, %__MODULE__{execution | context: context}, context}
+
+        {:updated, context} ->
+          {:ok, %__MODULE__{execution | context: context}, context}
 
         e ->
           e
@@ -493,6 +527,11 @@ defmodule ExState.Execution do
     else
       {:error, "no function defined for action #{action}"}
     end
+  end
+
+  def execute_actions!(execution) do
+    {:ok, execution, _} = execute_actions(execution)
+    execution
   end
 
   defp reset_actions(execution) do

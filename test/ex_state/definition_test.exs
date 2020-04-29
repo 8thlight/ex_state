@@ -5,8 +5,6 @@ defmodule ExState.DefinitionTest do
     use ExState.Definition
 
     workflow "simple" do
-      subject :anything
-
       initial_state :a
 
       state :a do
@@ -83,11 +81,11 @@ defmodule ExState.DefinitionTest do
       end
     end
 
-    def participant(m, :sender), do: m.sender_id
-    def participant(m, :recipient), do: m.recipient_id
+    def participant(:sender, %{message: m}), do: m.sender_id
+    def participant(:recipient, %{message: m}), do: m.recipient_id
 
-    def use_step?(m, :review), do: m.review?
-    def use_step?(m, :confirm), do: m.confirm?
+    def use_step?(:review, %{message: m}), do: m.review?
+    def use_step?(:confirm, %{message: m}), do: m.confirm?
     def use_step?(_, _), do: true
 
     def notify_started(_), do: {:ok, "notified started"}
@@ -103,7 +101,7 @@ defmodule ExState.DefinitionTest do
 
   describe "subject/0" do
     test "defines subject type" do
-      assert SimpleWorkflow.subject() == :anything
+      assert SendWorkflow.subject() == {:message, Message}
     end
   end
 
@@ -113,7 +111,7 @@ defmodule ExState.DefinitionTest do
     end
 
     test "transitions to initial states" do
-      assert SendWorkflow.new(%Message{})
+      assert SendWorkflow.new(%{message: %Message{}})
              |> Map.get(:state)
              |> Map.get(:name) == "pending.sending"
     end
@@ -160,30 +158,30 @@ defmodule ExState.DefinitionTest do
     end
 
     test "defines completed step transition" do
-      assert SendWorkflow.continue("pending.sending", %Message{})
+      assert SendWorkflow.continue("pending.sending", %{message: %Message{}})
              |> SendWorkflow.transition_maybe({:completed, :send})
              |> Map.get(:state)
              |> Map.get(:name) == "pending.sent"
     end
 
     test "defines decision transition" do
-      assert SendWorkflow.continue("confirmed.deciding", %Message{})
+      assert SendWorkflow.continue("confirmed.deciding", %{message: %Message{}})
              |> SendWorkflow.transition_maybe({:decision, :decide, :good})
              |> Map.get(:state)
              |> Map.get(:name) == "good"
 
-      assert SendWorkflow.continue("confirmed.deciding", %Message{})
+      assert SendWorkflow.continue("confirmed.deciding", %{message: %Message{}})
              |> SendWorkflow.transition_maybe({:decision, :decide, :bad})
              |> Map.get(:state)
              |> Map.get(:name) == "bad"
     end
 
     test "transitions to initial state" do
-      assert SendWorkflow.new(%Message{})
+      assert SendWorkflow.new(%{message: %Message{}})
              |> Map.get(:state)
              |> Map.get(:name) == "pending.sending"
 
-      assert SendWorkflow.new(%Message{})
+      assert SendWorkflow.new(%{message: %Message{}})
              |> SendWorkflow.transition_maybe({:completed, :send})
              |> SendWorkflow.transition_maybe({:completed, :confirm})
              |> Map.get(:state)
@@ -191,7 +189,7 @@ defmodule ExState.DefinitionTest do
     end
 
     test "defines parent state transition" do
-      assert SendWorkflow.continue("pending.sent", %Message{})
+      assert SendWorkflow.continue("pending.sent", %{message: %Message{}})
              |> SendWorkflow.transition_maybe({:completed, :confirm})
              |> Map.get(:state)
              |> Map.get(:name) == "confirmed.deciding"
@@ -199,7 +197,7 @@ defmodule ExState.DefinitionTest do
 
     test "completes a workflow" do
       execution =
-        SendWorkflow.new(%Message{})
+        SendWorkflow.new(%{message: %Message{}})
         |> SendWorkflow.transition_maybe({:completed, :send})
         |> SendWorkflow.transition_maybe({:completed, :confirm})
         |> SendWorkflow.transition_maybe({:decision, :decide, :good})
@@ -210,7 +208,7 @@ defmodule ExState.DefinitionTest do
 
     test "passes event to parent states" do
       execution =
-        SendWorkflow.new(%Message{})
+        SendWorkflow.new(%{message: %Message{}})
         |> SendWorkflow.transition_maybe(:cancel)
 
       assert execution.state.name == "cancelled"
@@ -218,7 +216,7 @@ defmodule ExState.DefinitionTest do
 
     test "ignores invalid transitions" do
       execution =
-        SendWorkflow.new(%Message{})
+        SendWorkflow.new(%{message: %Message{}})
         |> SendWorkflow.transition_maybe({:completed, :prepare})
         |> SendWorkflow.transition_maybe({:completed, :review})
         |> SendWorkflow.transition_maybe({:completed, :send})
@@ -231,7 +229,7 @@ defmodule ExState.DefinitionTest do
 
     test "allows defined internal transitions" do
       assert {:ok, _} =
-               SendWorkflow.new(%Message{})
+               SendWorkflow.new(%{message: %Message{}})
                |> SendWorkflow.transition!(:cancel)
                |> SendWorkflow.transition(:cancel)
     end
@@ -261,7 +259,7 @@ defmodule ExState.DefinitionTest do
                :notify_cancelled,
                :log_stuff
              ] =
-               SendWorkflow.continue("pending", %Message{})
+               SendWorkflow.continue("pending", %{message: %Message{}})
                |> SendWorkflow.transition_maybe(:cancel)
                |> Map.get(:actions)
 
@@ -348,7 +346,7 @@ defmodule ExState.DefinitionTest do
 
     test "complete step accounts for unused steps" do
       assert {:ok, %{state: %{name: "pending.sending"}} = execution} =
-               SendWorkflow.new(%Message{review?: false})
+               SendWorkflow.new(%{message: %Message{review?: false}})
                |> SendWorkflow.complete(:prepare)
 
       assert {:error, _, %{state: %{name: "pending.sending"}} = execution} =
@@ -362,7 +360,7 @@ defmodule ExState.DefinitionTest do
 
     test "complete step returns error" do
       assert {:error, _, %{state: %{name: "pending.sending"}}} =
-               SendWorkflow.new(%Message{})
+               SendWorkflow.new(%{message: %Message{}})
                |> SendWorkflow.complete(:send)
     end
   end
@@ -414,7 +412,7 @@ defmodule ExState.DefinitionTest do
   describe "with_completed/2" do
     test "loads state with completed steps" do
       assert {:ok, %{state: %{name: "pending.sent"}}} =
-               SendWorkflow.continue("pending.sending", %Message{})
+               SendWorkflow.continue("pending.sending", %{message: %Message{}})
                |> SendWorkflow.with_completed("pending.sending", "prepare")
                |> SendWorkflow.with_completed("pending.sending", "review")
                |> SendWorkflow.complete(:send)
@@ -448,7 +446,7 @@ defmodule ExState.DefinitionTest do
       state :done
     end
 
-    def guard_transition(message, _, :done) do
+    def guard_transition(_, :done, %{message: message}) do
       if message.feedback == "too short" do
         {:error, "feedback is too short to be done"}
       else
@@ -462,19 +460,19 @@ defmodule ExState.DefinitionTest do
   describe "decision/3" do
     test "transitions to new state" do
       assert {:ok, %{state: %{name: "done"}}} =
-               DecisionWorkflow.new(%Message{})
+               DecisionWorkflow.new(%{message: %Message{}})
                |> DecisionWorkflow.decision(:rate, :good)
     end
 
     test "returns error for unknown decision" do
       assert {:error, _, _} =
-               DecisionWorkflow.new(%Message{})
+               DecisionWorkflow.new(%{message: %Message{}})
                |> DecisionWorkflow.decision(:rate, :something_else)
     end
 
     test "returns error for guarded transition" do
       assert {:error, reason, _} =
-               DecisionWorkflow.continue("feedback", %Message{feedback: "too short"})
+               DecisionWorkflow.continue("feedback", %{message: %Message{feedback: "too short"}})
                |> DecisionWorkflow.with_completed("feedback", "confirm_rating")
                |> DecisionWorkflow.complete(:provide_feedback)
 
@@ -483,7 +481,7 @@ defmodule ExState.DefinitionTest do
 
     test "handles repeatable decision" do
       assert {:ok, %{state: %{name: "feedback"}} = execution} =
-               DecisionWorkflow.new(%Message{})
+               DecisionWorkflow.new(%{message: %Message{}})
                |> DecisionWorkflow.decision(:rate, :bad)
 
       assert {:ok, %{state: %{name: "feedback"}} = execution} =
@@ -510,11 +508,11 @@ defmodule ExState.DefinitionTest do
     test "returns workflow data" do
       message = %Message{confirm?: true, sender_id: 1, recipient_id: 2}
 
-      assert SendWorkflow.new(message) |> SendWorkflow.dump() == %{
+      assert SendWorkflow.new(%{message: message}) |> SendWorkflow.dump() == %{
                name: "send",
                complete?: false,
                state: "pending.sending",
-               subject: {:message, message},
+               context: %{message: message},
                participants: [
                  "recipient",
                  "sender"
@@ -575,11 +573,11 @@ defmodule ExState.DefinitionTest do
     test "excludes unused steps" do
       confirmed_message = %Message{confirm?: false, sender_id: 1, recipient_id: 2}
 
-      assert SendWorkflow.new(confirmed_message) |> SendWorkflow.dump() == %{
+      assert SendWorkflow.new(%{message: confirmed_message}) |> SendWorkflow.dump() == %{
                name: "send",
                complete?: false,
                state: "pending.sending",
-               subject: {:message, confirmed_message},
+               context: %{message: confirmed_message},
                participants: [
                  "recipient",
                  "sender"
@@ -632,7 +630,7 @@ defmodule ExState.DefinitionTest do
     test "includes completed steps from previous states" do
       message = %Message{confirm?: true, sender_id: 1, recipient_id: 2}
 
-      assert SendWorkflow.continue("confirmed.deciding", message)
+      assert SendWorkflow.continue("confirmed.deciding", %{message: message})
              |> SendWorkflow.with_completed("pending.sending", "prepare")
              |> SendWorkflow.with_completed("pending.sending", "review")
              |> SendWorkflow.with_completed("pending.sending", "send")
@@ -640,7 +638,7 @@ defmodule ExState.DefinitionTest do
                name: "send",
                complete?: false,
                state: "confirmed.deciding",
-               subject: {:message, message},
+               context: %{message: message},
                participants: [
                  "recipient",
                  "sender"
@@ -718,15 +716,15 @@ defmodule ExState.DefinitionTest do
       state :complete
     end
 
-    def use_step?(%Message{review?: review}, _), do: review
+    def use_step?(_, %{message: %Message{review?: review}}), do: review
   end
 
   test "handles no used steps" do
     message = %Message{review?: true}
-    assert %{state: %{name: "working"}} = OptionalWorkflow.new(message)
+    assert %{state: %{name: "working"}} = OptionalWorkflow.new(%{message: message})
 
     message = %Message{review?: false}
-    assert %{state: %{name: "complete"}} = OptionalWorkflow.new(message)
+    assert %{state: %{name: "complete"}} = OptionalWorkflow.new(%{message: message})
   end
 
   defmodule VirtualWorkflow do
@@ -789,23 +787,21 @@ defmodule ExState.DefinitionTest do
     use ExState.Definition
 
     workflow "final_states" do
-      subject :note
+      initial_state :working
 
-      initial_state :composing
-
-      state :composing do
+      state :working do
         initial_state :planning
 
         state :planning do
-          on :_, [:thinking, :writing]
+          on :_, [:building, :waiting]
         end
 
-        state :thinking do
-          on :idea, :writing
+        state :waiting do
+          on :start, :building
         end
 
-        state :writing do
-          on :words, :done
+        state :building do
+          on :built, :done
         end
 
         state :done do
@@ -824,11 +820,11 @@ defmodule ExState.DefinitionTest do
       end
     end
 
-    def guard_transition(%{think: false}, :planning, :thinking) do
+    def guard_transition(:planning, :building, %{wait?: true}) do
       {:error, "no"}
     end
 
-    def guard_transition(%{think: true}, :planning, :thinking) do
+    def guard_transition(:planning, :building, %{wait?: false}) do
       :ok
     end
 
@@ -837,16 +833,16 @@ defmodule ExState.DefinitionTest do
 
   test "handles null event" do
     assert %{state: %{name: "sending"}} =
-             FinalStateWorkflow.new(%{think: false})
-             |> FinalStateWorkflow.transition!(:words)
+             FinalStateWorkflow.new(%{wait?: false})
+             |> FinalStateWorkflow.transition!(:built)
   end
 
   test "handles final states" do
     assert %{state: %{name: "sending"}} =
              execution =
-             FinalStateWorkflow.new(%{think: true})
-             |> FinalStateWorkflow.transition!(:idea)
-             |> FinalStateWorkflow.transition!(:words)
+             FinalStateWorkflow.new(%{wait?: true})
+             |> FinalStateWorkflow.transition!(:start)
+             |> FinalStateWorkflow.transition!(:built)
 
     refute FinalStateWorkflow.complete?(execution)
 

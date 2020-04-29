@@ -1,11 +1,11 @@
 defmodule ExState.Definition.Chart do
   alias ExState.Definition.State
 
-  @type subject :: atom() | {atom(), module()}
+  @type subject :: {atom(), module()}
 
   @type t :: %__MODULE__{
           name: String.t(),
-          subject: subject(),
+          subject: subject() | nil,
           initial_state: atom(),
           states: %{required(String.t()) => State.t()},
           participants: [atom()]

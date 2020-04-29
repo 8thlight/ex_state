@@ -10,11 +10,12 @@ defmodule ExState.Definition do
 
   ## Subject
 
-  The subject of the workflow is used to determine dynamic behavior through
-  callbacks `use_step?/2`, and `guard_transition/3`. Subject
+  The subject of the workflow is used to associate the workflow for lookup
+  in the database. The subject is added to the context under the defined key and
+  can be used in callbacks `use_step?/2`, and `guard_transition/3`. Subject
   names and types are defined using the `subject` keyword:
 
-      subject {:deal, Deal}
+      subject :deal, Deal
 
   ## Initial State
 
@@ -127,8 +128,8 @@ defmodule ExState.Definition do
 
   States can be ignored on a subject basis through `use_step/2`:
 
-      def use_step(subject, :sign) do
-        subject.requires_signature?
+      def use_step(:sign, %{deal: deal}) do
+        deal.requires_signature?
       end
 
       def use_step(_, _), do: true
@@ -229,8 +230,8 @@ defmodule ExState.Definition do
   Guards validate that certain dynamic conditions are met in order to
   allow state transitions:
 
-      def guard_transition(subject, :one, :two) do
-        if length(subject.text) > 5 do
+      def guard_transition(:one, :two, %{note: note}) do
+        if length(note.text) > 5 do
           :ok
         else
           {:error, "Text must be greater than 5 characters long"}
@@ -257,12 +258,12 @@ defmodule ExState.Definition do
         step :send_something
       end
 
-      def update_done_at(subject) do
-        {:updated, %{subject | done_at: now()}}
+      def update_done_at(%{note: note} = context) do
+        {:updated, Map.put(context, :note, %{note | done_at: now()})}
       end
 
-  Actions can return a `{:updated, subject}` tuple to add the updated
-  subject to the execution state. A default `Execution.execute_actions/1`
+  Actions can return a `{:updated, context}` tuple to add the updated
+  context to the execution state. A default `Execution.execute_actions/1`
   function is provided which executes triggered actions in a fire-and-forget
   fashion. See `ExState.persist/1` for an example of transactionally
   executing actions.
@@ -274,11 +275,11 @@ defmodule ExState.Definition do
   alias ExState.Execution
   alias ExState.Definition.Chart
 
-  @type subject() :: any()
   @type state() :: atom()
   @type step() :: atom()
-  @callback use_step?(subject(), step()) :: boolean()
-  @callback guard_transition(subject(), state(), state()) :: :ok | {:error, any()}
+  @type context() :: map()
+  @callback use_step?(step(), context()) :: boolean()
+  @callback guard_transition(state(), state(), context()) :: :ok | {:error, any()}
   @optional_callbacks use_step?: 2, guard_transition: 3
 
   defmacro __using__(_) do
@@ -309,11 +310,17 @@ defmodule ExState.Definition do
       def state(id1, id2), do: Chart.state(@chart, id1, id2)
 
       def new(), do: new(nil)
-      def new(subject), do: Execution.new(@chart, __MODULE__, subject)
-      def continue(state_name), do: continue(state_name, nil)
+      def new(context), do: Execution.new(@chart, __MODULE__, context)
+      def continue(state_name), do: continue(state_name, %{})
 
-      def continue(state_name, subject),
-        do: Execution.continue(@chart, __MODULE__, subject, state_name)
+      def continue(state_name, context),
+        do: Execution.continue(@chart, __MODULE__, state_name, context)
+
+      def put_context(execution, context),
+        do: Execution.put_context(execution, context)
+
+      def put_context(execution, key, value),
+        do: Execution.put_context(execution, key, value)
 
       def with_completed(execution, state, step, decision \\ nil),
         do: Execution.with_completed(execution, state, step, decision)
@@ -326,10 +333,13 @@ defmodule ExState.Definition do
       def complete(execution, step), do: Execution.complete(execution, step)
       def decision(execution, step, decision), do: Execution.decision(execution, step, decision)
       def execute_actions(execution), do: Execution.execute_actions(execution)
+      def execute_actions!(execution), do: Execution.execute_actions!(execution)
       def dump(execution), do: Execution.dump(execution)
     end
   end
 
-  def update({:ok, subject}), do: {:updated, subject}
-  def update(x), do: x
+  def updated({:ok, context}), do: {:updated, context}
+  def updated(x), do: x
+  def updated({:ok, value}, key), do: {:updated, {key, value}}
+  def updated(x, _), do: x
 end

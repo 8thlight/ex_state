@@ -42,10 +42,6 @@ defmodule ExState.Definition.Compiler do
     %Env{env | chart: %Chart{chart | subject: {name, queryable}}}
   end
 
-  defp compile_chart(%Env{chart: chart} = env, {:subject, _, [name]}) do
-    %Env{env | chart: %Chart{chart | subject: name}}
-  end
-
   defp compile_chart(%Env{chart: chart} = env, {:participant, _, [name]}) do
     %Env{env | chart: Chart.put_participant(chart, name)}
   end

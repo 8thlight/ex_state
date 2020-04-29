@@ -5,12 +5,14 @@ defmodule ExState do
   The `ExState.Execution` is built through the subject's `:workflow`
   association.
 
-  ## Subject Setup
+  ## Setup
 
       defmodule ShipmentWorkflow do
         use ExState.Definition
 
         workflow "shipment" do
+          subject :shipment, Shipment
+
           initial_state :preparing
 
           state :preparing do
@@ -134,7 +136,8 @@ defmodule ExState do
   def load(subject) do
     with workflow when not is_nil(workflow) <- get(subject),
          definition <- Subject.workflow_definition(subject),
-         execution <- Execution.continue(definition, subject, workflow.state),
+         execution <- Execution.continue(definition, workflow.state),
+         execution <- Execution.put_subject(execution, subject),
          execution <- with_completed_steps(execution, workflow),
          execution <- Execution.with_meta(execution, :workflow, workflow) do
       execution
@@ -213,15 +216,15 @@ defmodule ExState do
         |> List.last()
         |> case do
           nil ->
-            {:ok, Subject.put_workflow(execution.subject, workflow)}
+            {:ok, Subject.put_workflow(Execution.get_subject(execution), workflow)}
 
           {action, _} ->
             case Map.get(results, action) do
               nil ->
-                {:ok, Subject.put_workflow(execution.subject, workflow)}
+                {:ok, Subject.put_workflow(Execution.get_subject(execution), workflow)}
 
               {execution, _} ->
-                {:ok, Subject.put_workflow(execution.subject, workflow)}
+                {:ok, Subject.put_workflow(Execution.get_subject(execution), workflow)}
             end
         end
 
@@ -239,7 +242,8 @@ defmodule ExState do
   defp create_changeset(subject) do
     params =
       Subject.workflow_definition(subject)
-      |> Execution.new(subject)
+      |> Execution.new()
+      |> Execution.put_subject(subject)
       |> Execution.dump()
 
     Workflow.new(params)

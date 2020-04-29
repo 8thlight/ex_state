@@ -24,6 +24,10 @@ be found at [https://hexdocs.pm/ex_state](https://hexdocs.pm/ex_state).
 
 ## Usage
 
+### Without Ecto
+
+- [Example](test/ex_state/examples/vending_machine_test.exs)
+
 ### Ecto Setup
 
 ```elixir
@@ -89,7 +93,13 @@ defmodule SaleWorkflow do
     end
   end
 
-  def update_cancelled_at(sale) do
+  def guard_transition(:pending, :sent, %{sale: %{ready: false}}) do
+    {:error, "not ready"}
+  end
+
+  def guard_transition(_from, _to, _context), do: :ok
+
+  def update_cancelled_at(%{sale: sale}) do
     sale
     |> Sale.changeset(%{cancelled_at: DateTime.utc_now()})
     |> Repo.update()

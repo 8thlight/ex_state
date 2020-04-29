@@ -55,10 +55,10 @@ defmodule ExState.TestSupport.SaleWorkflow do
 
   def guard_transition(_sale, _from, _to), do: :ok
 
-  def update_cancelled_at(sale) do
+  def update_cancelled_at(%{sale: sale}) do
     sale
     |> Sale.changeset(%{cancelled_at: DateTime.utc_now()})
     |> Repo.update()
-    |> update()
+    |> updated(:sale)
   end
 end

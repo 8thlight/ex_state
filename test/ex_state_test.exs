@@ -26,7 +26,7 @@ defmodule ExStateTest do
     test "creates a workflow for a workflowable subject" do
       sale = create_sale()
 
-      {:ok, %{subject: sale}} = ExState.create(sale)
+      {:ok, %{context: %{sale: sale}}} = ExState.create(sale)
 
       refute sale.workflow.complete?
       assert sale.workflow.state == "pending"
@@ -45,7 +45,7 @@ defmodule ExStateTest do
     setup do
       sale = create_sale()
 
-      {:ok, %{subject: sale}} = ExState.create(sale)
+      {:ok, %{context: %{sale: sale}}} = ExState.create(sale)
 
       [sale: sale]
     end
@@ -94,7 +94,7 @@ defmodule ExStateTest do
     setup do
       sale = create_sale()
 
-      {:ok, %{subject: sale}} = ExState.create(sale)
+      {:ok, %{context: %{sale: sale}}} = ExState.create(sale)
 
       [sale: sale]
     end
