@@ -146,7 +146,7 @@ defmodule ExState do
 
   defp get(subject) do
     subject
-    |> Ecto.assoc(Subject.workflow_assoc_name(subject))
+    |> Ecto.assoc(Subject.workflow_association(subject))
     |> preload(:steps)
     |> repo().one()
   end

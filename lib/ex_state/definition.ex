@@ -288,7 +288,7 @@ defmodule ExState.Definition do
 
       require ExState.Definition.Compiler
 
-      import unquote(__MODULE__)
+      import unquote(__MODULE__), only: [workflow: 2]
     end
   end
 
@@ -335,11 +335,10 @@ defmodule ExState.Definition do
       def execute_actions(execution), do: Execution.execute_actions(execution)
       def execute_actions!(execution), do: Execution.execute_actions!(execution)
       def dump(execution), do: Execution.dump(execution)
+      def updated({:ok, context}), do: {:updated, context}
+      def updated(x), do: x
+      def updated({:ok, value}, key), do: {:updated, {key, value}}
+      def updated(x, _), do: x
     end
   end
-
-  def updated({:ok, context}), do: {:updated, context}
-  def updated(x), do: x
-  def updated({:ok, value}, key), do: {:updated, {key, value}}
-  def updated(x, _), do: x
 end

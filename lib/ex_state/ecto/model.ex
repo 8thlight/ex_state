@@ -27,58 +27,7 @@ defmodule ExState.Ecto.Model do
     end
   end
 
-  import Ecto.Changeset
-
   def new(mod, attrs) do
     mod.changeset(struct(mod), attrs)
-  end
-
-  def put_assoc_maybe(changeset, assoc, attrs, transform) do
-    case Map.fetch(attrs, assoc) do
-      :error ->
-        changeset
-
-      {:ok, nil} ->
-        put_assoc(changeset, assoc, nil)
-
-      {:ok, assoc_attrs} ->
-        case transform_assoc(assoc_attrs, transform) do
-          {:ok, transformed} ->
-            put_assoc(changeset, assoc, transformed)
-
-          {:error, %Ecto.Changeset{} = changeset} ->
-            add_error(changeset, assoc, get_error(changeset))
-
-          {:error, reason} ->
-            add_error(changeset, assoc, reason)
-        end
-    end
-  end
-
-  defp get_error(changeset) do
-    changeset
-    |> traverse_errors(fn {message, _opts} -> message end)
-    |> Enum.map(fn {k, v} -> "#{k} #{v}" end)
-    |> Enum.join(",")
-  end
-
-  defp transform_assoc(attrs, transform) when is_list(attrs) do
-    Enum.reduce(attrs, {:ok, []}, fn
-      next, {:ok, transformed} ->
-        case transform_assoc(next, transform) do
-          {:ok, value} ->
-            {:ok, transformed ++ [value]}
-
-          e ->
-            e
-        end
-
-      _, e ->
-        e
-    end)
-  end
-
-  defp transform_assoc(attrs, transform) do
-    transform.(attrs)
   end
 end
