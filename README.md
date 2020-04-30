@@ -45,8 +45,7 @@ end
 ```
 
 ```elixir
-config :ex_state, ExState,
-  repo: MyApp.Repo
+config :ex_state, repo: MyApp.Repo
 ```
 
 ### Defining States

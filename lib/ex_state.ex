@@ -102,9 +102,7 @@ defmodule ExState do
   alias Ecto.Changeset
 
   defp repo do
-    :ex_state
-    |> Application.fetch_env!(__MODULE__)
-    |> Keyword.fetch!(:repo)
+    Application.fetch_env!(:ex_state, :repo)
   end
 
   @spec create(struct()) :: {:ok, Execution.t()} | {:error, any()}
