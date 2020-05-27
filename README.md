@@ -50,6 +50,8 @@ config :ex_state, repo: MyApp.Repo
 
 ### Defining States
 
+Define the workflow:
+
 ```elixir
 defmodule SaleWorkflow do
   use ExState.Definition
@@ -106,6 +108,8 @@ defmodule SaleWorkflow do
 end
 ```
 
+Add the workflow association to the subject:
+
 ```elixir
 defmodule Sale do
   use Ecto.Schema
@@ -118,6 +122,14 @@ defmodule Sale do
     field :product_id, :string
     field :cancelled_at, :utc_datetime
   end
+end
+```
+
+Add a `workflow_id` column to the subject table:
+
+```
+alter table(:sales) do
+  add :workflow_id, references(:workflows, type: :uuid)
 end
 ```
 
