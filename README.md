@@ -13,7 +13,7 @@ by adding `ex_state` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:ex_state_ecto, "~> 0.2.0"}
+    {:ex_state_ecto, "~> 0.3"}
   ]
 end
 ```
